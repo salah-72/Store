@@ -1,5 +1,6 @@
 import express, { urlencoded } from 'express';
 import cors from 'cors';
+import authRouter from './modules/Auth/routes/authRouter';
 import errorHandler from './common/middlewares/errorHandler';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
@@ -33,6 +34,8 @@ app.use(compression({ threshold: 1024 }));
 app.get('/', async (req, res) => {
   res.send('welcome');
 });
+
+app.use('/auth', authRouter);
 
 app.use(errorHandler);
 
