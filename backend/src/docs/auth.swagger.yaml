@@ -1,0 +1,349 @@
+openapi: 3.0.0
+info:
+  title: Agri-Store Auth API
+  version: 1.0.0
+  description: manage authentication and authorization for the Agri-Store application. This API allows admins to log in, manage their accounts, and perform secure operations.
+
+servers:
+  - url: http://localhost:5000/api/v1/auth
+    description: Local development server
+
+paths:
+  /login:
+    post:
+      summary: admin login and generate Access Token and return Refresh Token in HTTP-Only Cookie.
+      tags:
+        - Auth
+      description: generate Access Token and return Refresh Token in HTTP-Only Cookie. The Refresh Token is stored in a secure cookie to enhance security. The Access Token is returned in the response body for immediate use in subsequent requests.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: login successful, Access Token generated, and Refresh Token set in HTTP-Only Cookie
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: refreshToken=abc123xyz...; Path=/; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  user:
+                    $ref: '#/components/schemas/AdminResponse'
+                  accessToken:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: username or password is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: rate limit exceeded (too many login attempts)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /newAdmin:
+    post:
+      summary: create a new admin account (requires authentication)
+      description: create a new admin account. This endpoint is protected and requires a valid Access Token
+      tags:
+        - Admin Management
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAdminInput'
+      responses:
+        '201':
+          description: admin account created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        '400':
+          description: username is already taken or there is an error in the data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: not authorized (Token missing or invalid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /logout:
+    post:
+      summary: logout the current admin and clear the Refresh Token cookie
+      description: logout the current admin and clear the Refresh Token cookie. This endpoint invalidates the
+      tags:
+        - Auth
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: logout successful, Refresh Token cleared from HTTP-Only Cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: logout successfully
+        '400':
+          description: Refresh Token not found (user is not logged in)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: not authorized (Token missing or invalid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /refresh:
+    post:
+      summary: generate a new Access Token using the Refresh Token from the HTTP-Only Cookie
+      description: generate a new Access Token using the Refresh Token from the HTTP-Only Cookie.
+      tags:
+        - Auth
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  description: The Refresh Token is expected to be sent in the HTTP-Only Cookie. If not present, the request will fail.
+      responses:
+        '200':
+          description: new Access Token generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  accessToken:
+                    type: string
+        '401':
+          description: Refresh Token not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /password:
+    patch:
+      summary: change the password for the current admin (requires authentication)
+      description: change the password for the current admin. This endpoint is protected and requires a valid
+      tags:
+        - Auth
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordInput'
+      responses:
+        '200':
+          description: password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: password changed successfully, please log in again
+        '401':
+          description: old password is incorrect or the token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admins:
+    get:
+      summary: get a list of all admin accounts (requires authentication)
+      description: get a list of all admin accounts. This endpoint is protected and requires a valid
+      tags:
+        - Admin Management
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: list of all admin accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      admins:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AdminResponse'
+        '401':
+          description: not authorized (Token missing or invalid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /{adminId}:
+    delete:
+      summary: delete an admin account by ID (requires authentication)
+      description: delete an admin account by ID. This endpoint is protected and requires a valid Access
+      tags:
+        - Admin Management
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: adminId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: The ID of the admin account to delete
+      responses:
+        '204':
+          description: Admin deleted successfully (No Content)
+        '400':
+          description: Cannot delete the admin, as it is the only admin in the system
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: not authorized (Token missing or invalid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: ضع Access Token برمز Bearer
+
+  schemas:
+    LoginInput:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 30
+          example: admin_main
+        password:
+          type: string
+          minLength: 6
+          maxLength: 50
+          example: '123456'
+
+    CreateAdminInput:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 30
+          example: new_admin
+        password:
+          type: string
+          minLength: 6
+          maxLength: 50
+          example: '123456'
+
+    UpdatePasswordInput:
+      type: object
+      required:
+        - oldPassword
+        - newPassword
+        - passwordConfirm
+      properties:
+        oldPassword:
+          type: string
+          example: '123456'
+        newPassword:
+          type: string
+          minLength: 6
+          maxLength: 50
+          example: 'newpassword123'
+        passwordConfirm:
+          type: string
+          minLength: 6
+          maxLength: 50
+          example: 'newpassword123'
+
+    AdminResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: admin_main
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: fail
+        message:
+          type: string
+          example: Invalid username or password

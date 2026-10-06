@@ -1,5 +1,8 @@
 import express, { urlencoded } from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+import path from 'path';
 import authRouter from './modules/Auth/routes/authRouter';
 import errorHandler from './common/middlewares/errorHandler';
 import cookieParser from 'cookie-parser';
@@ -8,6 +11,10 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 
 const app = express();
+
+const swaggerDocument = YAML.load(
+  path.join(__dirname, './docs/auth.swagger.yaml'),
+);
 
 const limiter = rateLimit({
   limit: 60,
@@ -34,6 +41,8 @@ app.use(compression({ threshold: 1024 }));
 app.get('/', async (req, res) => {
   res.send('welcome');
 });
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use('/auth', authRouter);
 
