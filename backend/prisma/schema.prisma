@@ -12,6 +12,12 @@ datasource db {
   provider  = "postgresql"
 }
 
+enum StockUnit {
+  PIECE
+  GRAM
+  ML
+}
+
 model Admin {
   id           Int           @id @default(autoincrement())
   username     String        @unique
@@ -25,3 +31,31 @@ model RefreshToken {
   admin   Admin  @relation(fields: [adminId], references: [id], onDelete: Cascade)
   adminId Int    @unique
 }
+
+model Item {
+  id           Int        @id @default(autoincrement())
+  name         String
+  description  String?
+  unit         StockUnit
+  price        Decimal    @db.Decimal(12, 2)
+  priceBasis   Int        @default(1)
+  packName     String?
+  packSize     Int?
+  reorderLevel Int        @default(0)
+  isActive     Boolean    @default(true)
+
+  batches             Batch[]
+}
+
+model Batch {
+  id           Int      @id @default(autoincrement())
+  itemId       Int
+  item         Item     @relation(fields: [itemId], references: [id])
+  expiryDate   DateTime @db.Date
+  unitCost     Decimal  @db.Decimal(14, 6)
+  qtyReceived  Int
+  qtyRemaining Int
+
+  @@unique([itemId, expiryDate, unitCost])
+}
+
