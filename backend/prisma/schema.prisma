@@ -47,6 +47,8 @@ model Item {
   batches             Batch[]
   saleLines           SaleLine[]
   saleReturnLines     SaleReturnLine[]
+  PurchaseLines       PurchaseLine[]
+  PurchaseReturnLines PurchaseReturnLine[]
 }
 
 model Batch {
@@ -58,9 +60,11 @@ model Batch {
   qtyReceived  Int
   qtyRemaining Int
 
-  saleLineBatches   SaleLineBatch[]
-  saleReturnLines   SaleReturnLine[]
-
+  saleLineBatches     SaleLineBatch[]
+  saleReturnLines     SaleReturnLine[]
+  PurchaseLines       PurchaseLine[]
+  PurchaseReturnLines PurchaseReturnLine[]
+  
   @@unique([itemId, expiryDate, unitCost])
 }
 
@@ -141,4 +145,66 @@ model SaleReturnLine {
   baseQty         Int
   unitPrice       Decimal          @db.Decimal(14, 6)
   lineTotal       Decimal          @db.Decimal(12, 2)
+}
+
+model Supplier {
+  id             Int       @id @default(autoincrement())
+  name           String
+  phone          String    @default("")
+  openingBalance Decimal   @default(0) @db.Decimal(12, 2)
+  isActive       Boolean   @default(true)
+
+  purchases         Purchase[]
+  purchaseReturns   PurchaseReturn[]
+}
+
+model Purchase {
+  id         Int        @id @default(autoincrement())
+  supplierId Int
+  supplier   Supplier   @relation(fields: [supplierId], references: [id])
+  date       DateTime   @default(now())
+  total      Decimal    @default(0) @db.Decimal(12, 2)
+  paid       Decimal    @default(0) @db.Decimal(12, 2)
+  note       String?
+
+  lines             PurchaseLine[]
+  purchaseReturns   PurchaseReturn[]
+}
+
+model PurchaseLine {
+  id          Int       @id @default(autoincrement())
+  purchaseId  Int
+  purchase    Purchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  itemId      Int
+  item        Item      @relation(fields: [itemId], references: [id])
+  baseQty     Int
+  lineTotal   Decimal   @db.Decimal(12, 2)
+  batchId     Int
+  batch       Batch     @relation(fields: [batchId], references: [id])
+}
+
+model PurchaseReturn {
+  id          Int        @id @default(autoincrement())
+  supplierId  Int
+  supplier    Supplier   @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  purchaseId  Int?
+  purchase    Purchase?  @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  date        DateTime   @default(now())
+  total       Decimal    @default(0) @db.Decimal(12, 2)
+  cashRefund  Decimal    @default(0) @db.Decimal(12, 2)
+  note        String?
+
+  lines       PurchaseReturnLine[]
+}
+
+model PurchaseReturnLine {
+  id              Int                 @id @default(autoincrement())
+  returnId        Int
+  purchaseReturn  PurchaseReturn      @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  itemId          Int
+  item            Item                @relation(fields: [itemId], references: [id])
+  batchId         Int
+  batch           Batch               @relation(fields: [batchId], references: [id])
+  baseQty         Int
+  lineTotal       Decimal             @db.Decimal(12, 2)
 }
