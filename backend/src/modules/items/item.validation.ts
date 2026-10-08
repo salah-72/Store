@@ -14,6 +14,10 @@ const fields = {
   reorderLevel: z.coerce.number().int().min(0),
 };
 
+export const itemIdParam = z.object({
+  id: z.coerce.number().int().min(1),
+});
+
 export const createItemSchema = z
   .object({
     ...fields,
@@ -21,4 +25,11 @@ export const createItemSchema = z
   })
   .strict();
 
+export const updateItemSchema = z
+  .object(fields)
+  .partial()
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
+
 export type CreateItemInput = z.infer<typeof createItemSchema>;
+export type UpdateItemInput = z.infer<typeof updateItemSchema>;
