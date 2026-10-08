@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import { pagination } from '../../common/utils/schemas';
 
 const fields = {
   name: z.string().trim().min(1, 'Name is required').max(150),
@@ -37,6 +38,17 @@ export const setItemStatusSchema = z
   })
   .strict();
 
+export const listItemsQuery = pagination.extend({
+  search: z.string().trim().max(100).optional(),
+  unit: z.enum(['PIECE', 'GRAM', 'ML']).optional(),
+  active: z.enum(['true', 'false', 'all']).default('true'),
+  lowStock: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
+});
+
 export type CreateItemInput = z.infer<typeof createItemSchema>;
 export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 export type SetItemStatusInput = z.infer<typeof setItemStatusSchema>;
+export type ListItemsQuery = z.infer<typeof listItemsQuery>;
