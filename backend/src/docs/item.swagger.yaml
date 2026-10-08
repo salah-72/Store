@@ -6,6 +6,75 @@ info:
 
 paths:
   /items:
+    get:
+      summary: List items with stock details, pagination, and filters
+      tags:
+        - Items
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Number of items per page
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 100
+          description: Search by item name (case-insensitive)
+        - in: query
+          name: unit
+          schema:
+            type: string
+            enum: [PIECE, GRAM, ML]
+          description: Filter by stock unit type
+        - in: query
+          name: active
+          schema:
+            type: string
+            enum: [true, false, all]
+            default: 'true'
+          description: Filter by active status
+        - in: query
+          name: lowStock
+          schema:
+            type: string
+            enum: [true, false]
+          description: Filter items where sellable stock is less than or equal to reorder level
+      responses:
+        '200':
+          description: Items retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EnrichedItemResponse'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+        '400':
+          description: Invalid query parameters
+        '401':
+          description: Unauthorized
+
     post:
       summary: Create New Item
       tags:
@@ -37,6 +106,40 @@ paths:
           description: Unauthorized
 
   /items/{id}:
+    get:
+      summary: Get single item details with active batches
+      tags:
+        - Items
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Item ID
+      responses:
+        '200':
+          description: Item details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ItemDetailResponse'
+        '400':
+          description: Invalid ID parameter
+        '401':
+          description: Unauthorized
+        '404':
+          description: Item not found
+
     patch:
       summary: Update Item Details
       tags:
@@ -146,12 +249,10 @@ components:
           type: number
           minimum: 0
           example: 750.50
-          description: 'Price corresponding to priceBasis'
         priceBasis:
           type: integer
           minimum: 1
           example: 1000
-          description: 'Base unit quantity for price calculation (e.g., 1000 grams = 1 kg). Defaults to 1 for PIECE and 1000 for GRAM/ML.'
         packName:
           type: string
           maxLength: 50
@@ -162,13 +263,11 @@ components:
           minimum: 1
           nullable: true
           example: 25000
-          description: 'Package size in smallest base units (e.g., 25000 grams per sack)'
         reorderLevel:
           type: integer
           minimum: 0
           default: 0
           example: 10
-          description: 'Threshold quantity for stock reorder alerts'
 
     UpdateItemInput:
       type: object
@@ -252,3 +351,117 @@ components:
         isActive:
           type: boolean
           example: true
+
+    EnrichedItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Urea Fertilizer 46%'
+        description:
+          type: string
+          nullable: true
+          example: 'Nitrogen fertilizer for vegetative growth'
+        unit:
+          type: string
+          example: 'GRAM'
+        price:
+          type: number
+          example: 750.50
+        priceBasis:
+          type: integer
+          example: 1000
+        packName:
+          type: string
+          nullable: true
+          example: 'Sack'
+        packSize:
+          type: integer
+          nullable: true
+          example: 25000
+        reorderLevel:
+          type: integer
+          example: 10
+        isActive:
+          type: boolean
+          example: true
+        stock:
+          type: integer
+          example: 50000
+        sellable:
+          type: integer
+          example: 45000
+        expiredStock:
+          type: integer
+          example: 5000
+        nearestExpiry:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-12-31T00:00:00.000Z'
+        lowStock:
+          type: boolean
+          example: false
+
+    PageMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        totalPages:
+          type: integer
+          example: 5
+
+    BatchResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 101
+        itemId:
+          type: integer
+          example: 1
+        qtyRemaining:
+          type: integer
+          example: 25000
+          description: Remaining quantity in this batch
+        costPrice:
+          type: number
+          example: 600.00
+          description: Purchase/cost price per unit for this batch
+        expiryDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-12-31T00:00:00.000Z'
+        hasExpiry:
+          type: boolean
+          example: true
+        expired:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-01-15T10:30:00.000Z'
+
+    ItemDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/EnrichedItemResponse'
+        - type: object
+          properties:
+            batches:
+              type: array
+              items:
+                $ref: '#/components/schemas/BatchResponse'
+              description: Active inventory batches sorted by expiry date ascending (FEFO)
