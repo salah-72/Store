@@ -13,9 +13,28 @@ import rateLimit from 'express-rate-limit';
 
 const app = express();
 
-const swaggerDocument = YAML.load(
-  path.join(__dirname, './docs/auth.swagger.yaml'),
+const authSwagger = YAML.load(
+  path.join(process.cwd(), 'src/docs/auth.swagger.yaml'),
 );
+const itemSwagger = YAML.load(
+  path.join(process.cwd(), 'src/docs/item.swagger.yaml'),
+);
+
+const swaggerDocument = {
+  ...authSwagger,
+  paths: {
+    ...authSwagger.paths,
+    ...itemSwagger.paths,
+  },
+  components: {
+    ...authSwagger.components,
+    ...itemSwagger.components,
+    schemas: {
+      ...authSwagger.components?.schemas,
+      ...itemSwagger.components?.schemas,
+    },
+  },
+};
 
 const limiter = rateLimit({
   limit: 60,

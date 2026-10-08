@@ -1,17 +1,13 @@
 openapi: 3.0.0
 info:
-  title: Agri-Store Items API
+  title: Agricultural Store API - Items Module
   version: 1.0.0
-  description: توثيق API الخاص بإدارة المنتجات والأصناف (Items Management)
-
-servers:
-  - url: http://localhost:5000/api/v1/items
-    description: السيرفر المحلي (Local Server)
+  description: Inventory Item Catalog and Stock Unit Management API Documentation.
 
 paths:
-  /:
+  /items:
     post:
-      summary: إنشاء صنف جديد (مبيد / سماد / أداة)
+      summary: Create New Item
       tags:
         - Items
       security:
@@ -24,7 +20,7 @@ paths:
               $ref: '#/components/schemas/CreateItemInput'
       responses:
         '201':
-          description: تم إنشاء الصنف بنجاح
+          description: Item created successfully
           content:
             application/json:
               schema:
@@ -36,17 +32,93 @@ paths:
                   data:
                     $ref: '#/components/schemas/ItemResponse'
         '400':
-          description: بيانات غير صالحة، أو اسم المنتج موجود مسبقاً، أو خطأ في إدخال العبوة.
+          description: Validation error, duplicate item name, or invalid package parameters
         '401':
-          description: غير مصرح (Token مفقود أو غير صالح)
+          description: Unauthorized
+
+  /items/{id}:
+    patch:
+      summary: Update Item Details
+      tags:
+        - Items
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Item ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemInput'
+      responses:
+        '200':
+          description: Item updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ItemResponse'
+        '400':
+          description: Validation error or empty update body
+        '404':
+          description: Item not found
+        '409':
+          description: Unit cannot be updated because the item has associated stock movements
+
+  /items/{id}/status:
+    patch:
+      summary: Toggle Item Active Status
+      tags:
+        - Items
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Item ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetItemStatusInput'
+      responses:
+        '200':
+          description: Item active status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ItemResponse'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '404':
+          description: Item not found
 
 components:
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
   schemas:
     CreateItemInput:
       type: object
@@ -59,44 +131,90 @@ components:
           type: string
           minLength: 1
           maxLength: 150
-          example: 'سماد يوريا 46%'
+          example: 'Urea Fertilizer 46%'
         description:
           type: string
           maxLength: 500
           nullable: true
-          example: 'سماد نيتروجيني للنمو الخضري'
+          example: 'Nitrogen fertilizer for vegetative growth'
         unit:
           type: string
           enum: [PIECE, GRAM, ML]
           example: 'GRAM'
-          description: 'PIECE للأدوات، GRAM للأوزان، ML للسوائل'
+          description: 'PIECE for equipment, GRAM for mass, ML for liquids'
         price:
           type: number
           minimum: 0
           example: 750.50
-          description: 'السعر بناءً على الـ priceBasis'
+          description: 'Price corresponding to priceBasis'
         priceBasis:
           type: integer
           minimum: 1
           example: 1000
-          description: 'الكمية التي يعتمد عليها السعر (مثلاً 1000 جرام = كيلو). تلقائياً 1 للقطعة و 1000 للجرام/مللي.'
+          description: 'Base unit quantity for price calculation (e.g., 1000 grams = 1 kg). Defaults to 1 for PIECE and 1000 for GRAM/ML.'
         packName:
           type: string
           maxLength: 50
           nullable: true
-          example: 'شيكارة'
+          example: 'Sack'
         packSize:
           type: integer
           minimum: 1
           nullable: true
           example: 25000
-          description: 'حجم العبوة بالوحدة الصغرى (مثلاً الشيكارة = 25000 جرام)'
+          description: 'Package size in smallest base units (e.g., 25000 grams per sack)'
         reorderLevel:
           type: integer
           minimum: 0
           default: 0
           example: 10
-          description: 'الحد الأدنى للتنبيه بالنواقص'
+          description: 'Threshold quantity for stock reorder alerts'
+
+    UpdateItemInput:
+      type: object
+      description: All fields are optional
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+          example: 'Urea Fertilizer 46% (Modified)'
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: 'Updated product description'
+        unit:
+          type: string
+          enum: [PIECE, GRAM, ML]
+        price:
+          type: number
+          minimum: 0
+          example: 800.00
+        priceBasis:
+          type: integer
+          minimum: 1
+        packName:
+          type: string
+          maxLength: 50
+          nullable: true
+        packSize:
+          type: integer
+          minimum: 1
+          nullable: true
+        reorderLevel:
+          type: integer
+          minimum: 0
+
+    SetItemStatusInput:
+      type: object
+      required:
+        - isActive
+      properties:
+        isActive:
+          type: boolean
+          example: false
+          description: 'Set item active state (true for active, false for inactive)'
 
     ItemResponse:
       type: object
@@ -106,11 +224,11 @@ components:
           example: 1
         name:
           type: string
-          example: 'سماد يوريا 46%'
+          example: 'Urea Fertilizer 46%'
         description:
           type: string
           nullable: true
-          example: 'سماد نيتروجيني للنمو الخضري'
+          example: 'Nitrogen fertilizer for vegetative growth'
         unit:
           type: string
           example: 'GRAM'
@@ -123,7 +241,7 @@ components:
         packName:
           type: string
           nullable: true
-          example: 'شيكارة'
+          example: 'Sack'
         packSize:
           type: integer
           nullable: true
