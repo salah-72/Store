@@ -1,0 +1,136 @@
+openapi: 3.0.0
+info:
+  title: Agri-Store Items API
+  version: 1.0.0
+  description: توثيق API الخاص بإدارة المنتجات والأصناف (Items Management)
+
+servers:
+  - url: http://localhost:5000/api/v1/items
+    description: السيرفر المحلي (Local Server)
+
+paths:
+  /:
+    post:
+      summary: إنشاء صنف جديد (مبيد / سماد / أداة)
+      tags:
+        - Items
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemInput'
+      responses:
+        '201':
+          description: تم إنشاء الصنف بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ItemResponse'
+        '400':
+          description: بيانات غير صالحة، أو اسم المنتج موجود مسبقاً، أو خطأ في إدخال العبوة.
+        '401':
+          description: غير مصرح (Token مفقود أو غير صالح)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CreateItemInput:
+      type: object
+      required:
+        - name
+        - unit
+        - price
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+          example: 'سماد يوريا 46%'
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: 'سماد نيتروجيني للنمو الخضري'
+        unit:
+          type: string
+          enum: [PIECE, GRAM, ML]
+          example: 'GRAM'
+          description: 'PIECE للأدوات، GRAM للأوزان، ML للسوائل'
+        price:
+          type: number
+          minimum: 0
+          example: 750.50
+          description: 'السعر بناءً على الـ priceBasis'
+        priceBasis:
+          type: integer
+          minimum: 1
+          example: 1000
+          description: 'الكمية التي يعتمد عليها السعر (مثلاً 1000 جرام = كيلو). تلقائياً 1 للقطعة و 1000 للجرام/مللي.'
+        packName:
+          type: string
+          maxLength: 50
+          nullable: true
+          example: 'شيكارة'
+        packSize:
+          type: integer
+          minimum: 1
+          nullable: true
+          example: 25000
+          description: 'حجم العبوة بالوحدة الصغرى (مثلاً الشيكارة = 25000 جرام)'
+        reorderLevel:
+          type: integer
+          minimum: 0
+          default: 0
+          example: 10
+          description: 'الحد الأدنى للتنبيه بالنواقص'
+
+    ItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'سماد يوريا 46%'
+        description:
+          type: string
+          nullable: true
+          example: 'سماد نيتروجيني للنمو الخضري'
+        unit:
+          type: string
+          example: 'GRAM'
+        price:
+          type: number
+          example: 750.50
+        priceBasis:
+          type: integer
+          example: 1000
+        packName:
+          type: string
+          nullable: true
+          example: 'شيكارة'
+        packSize:
+          type: integer
+          nullable: true
+          example: 25000
+        reorderLevel:
+          type: integer
+          example: 10
+        isActive:
+          type: boolean
+          example: true
