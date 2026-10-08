@@ -31,5 +31,12 @@ export const updateItemSchema = z
   .strict()
   .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
 
+export const setItemStatusSchema = z
+  .object({
+    isActive: z.boolean(),
+  })
+  .strict();
+
 export type CreateItemInput = z.infer<typeof createItemSchema>;
 export type UpdateItemInput = z.infer<typeof updateItemSchema>;
+export type SetItemStatusInput = z.infer<typeof setItemStatusSchema>;

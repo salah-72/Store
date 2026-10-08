@@ -60,3 +60,13 @@ export async function updateItem(id: number, input: UpdateItemInput) {
     },
   });
 }
+
+export async function setItemStatus(id: number, isActive: boolean) {
+  const current = await prisma.item.findUnique({ where: { id } });
+  if (!current) throw new appError('Item not found', 404);
+
+  return prisma.item.update({
+    where: { id },
+    data: { isActive },
+  });
+}
