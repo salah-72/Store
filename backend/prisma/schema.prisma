@@ -47,8 +47,9 @@ model Item {
   batches             Batch[]
   saleLines           SaleLine[]
   saleReturnLines     SaleReturnLine[]
-  PurchaseLines       PurchaseLine[]
-  PurchaseReturnLines PurchaseReturnLine[]
+  purchaseLines       PurchaseLine[]
+  purchaseReturnLines PurchaseReturnLine[]
+  StockAdjustments    StockAdjustment[]
 }
 
 model Batch {
@@ -62,8 +63,9 @@ model Batch {
 
   saleLineBatches     SaleLineBatch[]
   saleReturnLines     SaleReturnLine[]
-  PurchaseLines       PurchaseLine[]
-  PurchaseReturnLines PurchaseReturnLine[]
+  purchaseLines       PurchaseLine[]
+  purchaseReturnLines PurchaseReturnLine[]
+  stockAdjustments    StockAdjustment[]
 
   @@unique([itemId, expiryDate, unitCost])
 }
@@ -228,4 +230,16 @@ model Expense {
   category String
   amount   Decimal  @db.Decimal(12, 2)
   note     String?
+}
+
+
+model StockAdjustment {
+  id       Int      @id @default(autoincrement())
+  date     DateTime @default(now())
+  itemId   Int
+  item     Item     @relation(fields: [itemId], references: [id])
+  batchId  Int
+  batch    Batch    @relation(fields: [batchId], references: [id])
+  baseQty  Int
+  reason   String?
 }
