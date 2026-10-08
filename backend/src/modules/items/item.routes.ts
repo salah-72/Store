@@ -5,6 +5,7 @@ import {
   setItemStatus,
   updateItem,
   listItem,
+  getItem,
 } from './item.controller';
 import { validateRequest } from '@/common/middlewares/validation';
 import {
@@ -21,6 +22,7 @@ router.use(protect);
 
 router.get('/', validateRequest({ query: listItemsQuery }), listItem);
 router.post('/', validateRequest({ body: createItemSchema }), createItem);
+router.get('/:id', validateRequest({ params: itemIdParam }), getItem);
 router.patch(
   '/:id',
   validateRequest({ params: itemIdParam, body: updateItemSchema }),

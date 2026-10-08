@@ -39,3 +39,8 @@ export const listItem = catchAsync(async (req: Request, res: Response) => {
     meta: pageMeta(total, q.page, q.limit),
   });
 });
+
+export const getItem = catchAsync(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  res.json({ success: true, data: await service.getItem(id) });
+});

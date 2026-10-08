@@ -7,7 +7,12 @@ import { isNameUnique, resolveShape } from './item.functions';
 import { prisma } from '@/config/postgres';
 import appError from '@/common/utils/appError';
 import { Prisma } from '@prisma/client';
-import { cairoToday, EXPIRY_CUTOFF } from '@/common/utils/date';
+import {
+  cairoToday,
+  EXPIRY_CUTOFF,
+  toYMD,
+  hasExpiry,
+} from '@/common/utils/date';
 
 type StockRow = {
   itemId: number;
@@ -174,4 +179,27 @@ export async function listItems(q: ListItemsQuery) {
 
   const stock = await stockByItem(items.map((i) => i.id));
   return { items: items.map((i) => withStock(i, stock.get(i.id))), total };
+}
+
+export async function getItem(id: number) {
+  const item = await prisma.item.findUnique({ where: { id } });
+  if (!item) throw new appError('Item not found', 404);
+
+  const [stock, batches] = await Promise.all([
+    stockByItem([id]),
+    prisma.batch.findMany({
+      where: { itemId: id, qtyRemaining: { gt: 0 } },
+      orderBy: [{ expiryDate: 'asc' }, { id: 'asc' }],
+    }),
+  ]);
+
+  const today = cairoToday();
+  return {
+    ...withStock(item, stock.get(id)),
+    batches: batches.map((b) => ({
+      ...b,
+      hasExpiry: hasExpiry(b.expiryDate),
+      expired: toYMD(b.expiryDate) < today,
+    })),
+  };
 }
