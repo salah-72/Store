@@ -1,0 +1,139 @@
+openapi: 3.0.0
+info:
+  title: Agricultural Store API - Suppliers Module
+  version: 1.0.0
+  description: Supplier Accounts and Initial Balance Management API Documentation.
+
+paths:
+  /suppliers:
+    post:
+      summary: Create New Supplier
+      tags:
+        - Suppliers
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierInput'
+      responses:
+        '201':
+          description: Supplier created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Validation error or supplier name already exists
+        '401':
+          description: Unauthorized
+
+  /suppliers/{id}:
+    patch:
+      summary: Update Supplier Details
+      tags:
+        - Suppliers
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Supplier ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSupplierInput'
+      responses:
+        '200':
+          description: Supplier updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Validation error, duplicate supplier name, or empty update body
+        '401':
+          description: Unauthorized
+        '404':
+          description: Supplier not found
+
+components:
+  schemas:
+    CreateSupplierInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Delta AgriChem Supplies'
+        phone:
+          type: string
+          default: ''
+          example: '01001234567'
+        openingBalance:
+          type: number
+          minimum: -9999999.99
+          maximum: 9999999.99
+          default: 0
+          example: -15000.00
+          description: 'Signed initial balance (Negative indicates store owes supplier, positive indicates supplier owes store)'
+
+    UpdateSupplierInput:
+      type: object
+      description: All fields are optional (partial update)
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Delta AgriChem Trading Co.'
+        phone:
+          type: string
+          example: '01098765432'
+        openingBalance:
+          type: number
+          minimum: -9999999.99
+          maximum: 9999999.99
+          example: 0
+
+    SupplierResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Delta AgriChem Supplies'
+        phone:
+          type: string
+          example: '01001234567'
+        openingBalance:
+          type: number
+          example: -15000.00
+        isActive:
+          type: boolean
+          example: true
