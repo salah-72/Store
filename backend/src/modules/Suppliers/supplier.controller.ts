@@ -1,6 +1,9 @@
 import catchAsync from '@/common/utils/catchAsync';
 import { Request, Response } from 'express';
-import { CreateSupplierInput } from './supplier.validation';
+import {
+  CreateSupplierInput,
+  UpdateSupplierInput,
+} from './supplier.validation';
 import * as service from './supplier.service';
 
 export const createSupplier = catchAsync(
@@ -8,6 +11,18 @@ export const createSupplier = catchAsync(
     const input = req.body as CreateSupplierInput;
     const supplier = await service.createSupplierService(input);
     res.status(201).json({
+      status: true,
+      data: supplier,
+    });
+  },
+);
+
+export const updateSupplier = catchAsync(
+  async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const input = req.body as UpdateSupplierInput;
+    const supplier = await service.updateSupplierService(id, input);
+    res.status(200).json({
       status: true,
       data: supplier,
     });
