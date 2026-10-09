@@ -77,6 +77,47 @@ paths:
         '404':
           description: Supplier not found
 
+  /suppliers/{id}/status:
+    patch:
+      summary: Toggle supplier active status
+      tags:
+        - Suppliers
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Supplier ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetSupplierStatusInput'
+      responses:
+        '200':
+          description: Supplier active status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '404':
+          description: Supplier not found
+
 components:
   schemas:
     CreateSupplierInput:
@@ -137,3 +178,13 @@ components:
         isActive:
           type: boolean
           example: true
+
+    SetSupplierStatusInput:
+      type: object
+      required:
+        - isActive
+      properties:
+        isActive:
+          type: boolean
+          example: false
+          description: 'Set supplier active state (true for active, false for inactive)'

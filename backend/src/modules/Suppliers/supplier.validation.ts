@@ -25,5 +25,12 @@ export const updateSupplierSchema = z
   .strict()
   .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
 
+export const setSupplierStatusSchema = z
+  .object({
+    isActive: z.boolean(),
+  })
+  .strict();
+
 export type CreateSupplierInput = z.infer<typeof createSupplierSchema>;
 export type UpdateSupplierInput = z.infer<typeof updateSupplierSchema>;
+export type setSupplierStatusInput = z.infer<typeof setSupplierStatusSchema>;

@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import {
   CreateSupplierInput,
   UpdateSupplierInput,
+  setSupplierStatusInput,
 } from './supplier.validation';
 import * as service from './supplier.service';
 
@@ -22,6 +23,18 @@ export const updateSupplier = catchAsync(
     const id = Number(req.params.id);
     const input = req.body as UpdateSupplierInput;
     const supplier = await service.updateSupplierService(id, input);
+    res.status(200).json({
+      status: true,
+      data: supplier,
+    });
+  },
+);
+
+export const setSupplierStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const { isActive } = req.body as setSupplierStatusInput;
+    const supplier = await service.setSupplierStatusService(id, isActive);
     res.status(200).json({
       status: true,
       data: supplier,

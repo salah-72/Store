@@ -54,3 +54,20 @@ export async function updateSupplierService(
     },
   });
 }
+
+export async function setSupplierStatusService(id: number, isActive: boolean) {
+  const supplier = await prisma.supplier.findUnique({
+    where: { id },
+  });
+
+  if (!supplier) {
+    throw new appError('Supplier not found', 404);
+  }
+
+  return prisma.supplier.update({
+    where: { id },
+    data: {
+      isActive,
+    },
+  });
+}
