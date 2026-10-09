@@ -11,3 +11,19 @@ export const pageMeta = (total: number, page: number, limit: number) => ({
   total,
   totalPages: Math.ceil(total / limit),
 });
+
+const round2 = (v: number) => Math.round(v * 100) / 100;
+
+export const money = z.coerce
+  .number()
+  .min(0)
+  .max(9_999_999.99)
+  .transform(round2);
+
+export const signedMoney = z.coerce
+  .number()
+  .min(-9_999_999.99)
+  .max(9_999_999.99)
+  .transform(round2);
+
+export const phone = z.string().trim().max(30);
