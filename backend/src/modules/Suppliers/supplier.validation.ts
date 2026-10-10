@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { phone, signedMoney } from '../../common/utils/schemas';
+import { pagination, phone, signedMoney } from '../../common/utils/schemas';
 
 const name = z.string().trim().min(1, 'Name is required').max(100);
 
@@ -31,6 +31,16 @@ export const setSupplierStatusSchema = z
   })
   .strict();
 
+export const listSuppliersQuery = pagination.extend({
+  search: z.string().trim().max(100).optional(),
+  active: z.enum(['true', 'false', 'all']).default('true'),
+  owed: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
+});
+
 export type CreateSupplierInput = z.infer<typeof createSupplierSchema>;
 export type UpdateSupplierInput = z.infer<typeof updateSupplierSchema>;
 export type setSupplierStatusInput = z.infer<typeof setSupplierStatusSchema>;
+export type ListSuppliersQuery = z.infer<typeof listSuppliersQuery>;

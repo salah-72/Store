@@ -2,10 +2,12 @@ import catchAsync from '@/common/utils/catchAsync';
 import { Request, Response } from 'express';
 import {
   CreateSupplierInput,
+  ListSuppliersQuery,
   UpdateSupplierInput,
   setSupplierStatusInput,
 } from './supplier.validation';
 import * as service from './supplier.service';
+import { pageMeta } from '@/common/utils/schemas';
 
 export const createSupplier = catchAsync(
   async (req: Request, res: Response) => {
@@ -38,6 +40,20 @@ export const setSupplierStatus = catchAsync(
     res.status(200).json({
       status: true,
       data: supplier,
+    });
+  },
+);
+
+export const getSupplierList = catchAsync(
+  async (req: Request, res: Response) => {
+    const q = req.query as unknown as ListSuppliersQuery;
+    q.page = Number(q.page) || 1;
+    q.limit = Number(q.limit) || 20;
+    const { suppliers, total } = await service.listSuppliers(q);
+    res.json({
+      success: true,
+      data: suppliers,
+      meta: pageMeta(total, q.page, q.limit),
     });
   },
 );

@@ -20,10 +20,14 @@ export const validateRequest = (schema: validationSchema) => {
         Object.assign(req.params, parsedParams);
       }
       if (schema.query) {
-        const parsedQuery = (await schema.query.parseAsync(
-          req.query,
-        )) as typeof req.query;
-        Object.assign(req.query, parsedQuery);
+        const parsedQuery = await schema.query.parseAsync(req.query);
+
+        Object.defineProperty(req, 'query', {
+          value: parsedQuery,
+          writable: true,
+          configurable: true,
+          enumerable: true,
+        });
       }
       next();
     } catch (error) {

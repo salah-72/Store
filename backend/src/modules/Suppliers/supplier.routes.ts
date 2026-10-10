@@ -3,6 +3,7 @@ import { protect } from '../Auth/controllers/authController';
 import { validateRequest } from '@/common/middlewares/validation';
 import {
   createSupplier,
+  getSupplierList,
   setSupplierStatus,
   updateSupplier,
 } from './supplier.controller';
@@ -11,12 +12,18 @@ import {
   updateSupplierSchema,
   idParam,
   setSupplierStatusSchema,
+  listSuppliersQuery,
 } from './supplier.validation';
 
 const router = Router();
 
 router.use(protect);
 
+router.get(
+  '/',
+  validateRequest({ query: listSuppliersQuery }),
+  getSupplierList,
+);
 router.post(
   '/',
   validateRequest({ body: createSupplierSchema }),
