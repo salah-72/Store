@@ -183,3 +183,11 @@ export async function listSuppliers(q: ListSuppliersQuery) {
     total,
   };
 }
+
+export async function getSupplier(id: number) {
+  const supplier = await prisma.supplier.findUnique({ where: { id } });
+  if (!supplier) throw new appError('Supplier not found', 404);
+
+  const sums = await summariesFor([supplier]);
+  return { ...supplier, ...sums.get(id)! };
+}
