@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import {
   CreateSupplierInput,
   ListSuppliersQuery,
+  StatementQuery,
   UpdateSupplierInput,
   setSupplierStatusInput,
 } from './supplier.validation';
@@ -61,4 +62,10 @@ export const getSupplierList = catchAsync(
 export const getSupplier = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   res.json({ success: true, data: await service.getSupplier(id) });
+});
+
+export const statement = catchAsync(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const { from, to } = req.query as StatementQuery;
+  res.json({ success: true, data: await service.getStatement(id, from, to) });
 });

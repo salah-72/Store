@@ -1,4 +1,5 @@
 import { prisma } from '@/config/postgres';
+import { buildStatement, type Move } from '../../common/utils/statement';
 import {
   CreateSupplierInput,
   ListSuppliersQuery,
@@ -6,6 +7,7 @@ import {
 } from './supplier.validation';
 import appError from '@/common/utils/appError';
 import { Prisma } from '@prisma/client';
+import { addDaysYMD, cairoStartOfDay } from '@/common/utils/date';
 
 const ZERO = new Prisma.Decimal(0);
 const sum = (v: Prisma.Decimal | null | undefined) => v ?? ZERO;
@@ -190,4 +192,76 @@ export async function getSupplier(id: number) {
 
   const sums = await summariesFor([supplier]);
   return { ...supplier, ...sums.get(id)! };
+}
+
+export async function getStatement(id: number, from?: string, to?: string) {
+  const supplier = await prisma.supplier.findUnique({
+    where: { id },
+    select: { id: true, name: true, phone: true, openingBalance: true },
+  });
+  if (!supplier) throw new appError('Supplier not found', 404);
+
+  const [purchases, payments, returns] = await Promise.all([
+    prisma.purchase.findMany({
+      where: { supplierId: id },
+      select: { id: true, date: true, total: true, paid: true, note: true },
+    }),
+    prisma.payment.findMany({
+      where: { supplierId: id },
+      select: { id: true, date: true, amount: true, note: true },
+    }),
+    prisma.purchaseReturn.findMany({
+      where: { supplierId: id },
+      select: {
+        id: true,
+        date: true,
+        total: true,
+        cashRefund: true,
+        note: true,
+      },
+    }),
+  ]);
+
+  const moves: Move[] = [
+    ...purchases.map((p) => ({
+      date: p.date,
+      type: 'PURCHASE' as const,
+      ref: p.id,
+      debit: p.total,
+      credit: p.paid,
+      note: p.note,
+    })),
+    ...payments.map((p) => ({
+      date: p.date,
+      type: 'PAYMENT' as const,
+      ref: p.id,
+      debit: ZERO,
+      credit: p.amount,
+      note: p.note,
+    })),
+    ...returns.map((r) => ({
+      date: r.date,
+      type: 'RETURN' as const,
+      ref: r.id,
+      debit: r.cashRefund,
+      credit: r.total,
+      note: r.note,
+    })),
+  ];
+
+  const result = buildStatement(
+    supplier.openingBalance,
+    moves,
+    from ? cairoStartOfDay(from) : undefined,
+    to ? cairoStartOfDay(addDaysYMD(to, 1)) : undefined,
+  );
+
+  return {
+    supplier: { id: supplier.id, name: supplier.name, phone: supplier.phone },
+    period: { from: from ?? null, to: to ?? null },
+    openingBalance: result.opening,
+    rows: result.rows,
+    totals: result.totals,
+    closingBalance: result.closing,
+  };
 }

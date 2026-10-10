@@ -6,6 +6,7 @@ import {
   getSupplier,
   getSupplierList,
   setSupplierStatus,
+  statement,
   updateSupplier,
 } from './supplier.controller';
 import {
@@ -14,6 +15,7 @@ import {
   idParam,
   setSupplierStatusSchema,
   listSuppliersQuery,
+  statementQuery,
 } from './supplier.validation';
 
 const router = Router();
@@ -31,6 +33,11 @@ router.post(
   createSupplier,
 );
 router.get('/:id', validateRequest({ params: idParam }), getSupplier);
+router.get(
+  '/:id/statement',
+  validateRequest({ params: idParam, query: statementQuery }),
+  statement,
+);
 router.patch(
   '/:id',
   validateRequest({ params: idParam, body: updateSupplierSchema }),

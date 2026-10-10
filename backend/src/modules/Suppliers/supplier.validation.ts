@@ -1,5 +1,10 @@
 import * as z from 'zod';
-import { pagination, phone, signedMoney } from '../../common/utils/schemas';
+import {
+  pagination,
+  phone,
+  signedMoney,
+  ymd,
+} from '../../common/utils/schemas';
 
 const name = z.string().trim().min(1, 'Name is required').max(100);
 
@@ -40,7 +45,15 @@ export const listSuppliersQuery = pagination.extend({
     .transform((v) => v === 'true'),
 });
 
+export const statementQuery = z
+  .object({ from: ymd.optional(), to: ymd.optional() })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: '"from" must not be after "to"',
+    path: ['from'],
+  });
+
 export type CreateSupplierInput = z.infer<typeof createSupplierSchema>;
 export type UpdateSupplierInput = z.infer<typeof updateSupplierSchema>;
 export type setSupplierStatusInput = z.infer<typeof setSupplierStatusSchema>;
 export type ListSuppliersQuery = z.infer<typeof listSuppliersQuery>;
+export type StatementQuery = z.infer<typeof statementQuery>;
