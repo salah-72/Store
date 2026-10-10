@@ -145,8 +145,6 @@ export async function setSupplierStatusService(id: number, isActive: boolean) {
 }
 
 export async function listSuppliers(q: ListSuppliersQuery) {
-  console.log('QUERY:', q);
-
   const where: Prisma.SupplierWhereInput = {};
   if (q.search) {
     where.OR = [
@@ -169,7 +167,6 @@ export async function listSuppliers(q: ListSuppliersQuery) {
     };
   }
 
-  console.log('WHERE:', where);
   const [total, suppliers] = await Promise.all([
     prisma.supplier.count({ where }),
     prisma.supplier.findMany({
@@ -179,9 +176,6 @@ export async function listSuppliers(q: ListSuppliersQuery) {
       take: q.limit,
     }),
   ]);
-
-  console.log('TOTAL:', total);
-  console.log('SUPPLIERS:', suppliers);
 
   const sums = await summariesFor(suppliers);
   return {

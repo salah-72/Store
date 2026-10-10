@@ -6,6 +6,68 @@ info:
 
 paths:
   /suppliers:
+    get:
+      summary: List suppliers with financial summaries, pagination, and filters
+      tags:
+        - Suppliers
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Number of suppliers per page
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 100
+          description: Search by supplier name or phone number (case-insensitive)
+        - in: query
+          name: active
+          schema:
+            type: string
+            enum: [true, false, all]
+            default: 'true'
+          description: Filter by active status
+        - in: query
+          name: owed
+          schema:
+            type: boolean
+          description: Filter suppliers where remaining balance is greater than zero (owed balance)
+      responses:
+        '200':
+          description: Suppliers retrieved successfully with financial summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EnrichedSupplierResponse'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+        '400':
+          description: Invalid query parameters
+        '401':
+          description: Unauthorized
+
     post:
       summary: Create New Supplier
       tags:
@@ -188,3 +250,58 @@ components:
           type: boolean
           example: false
           description: 'Set supplier active state (true for active, false for inactive)'
+
+    EnrichedSupplierResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Delta AgriChem Supplies'
+        phone:
+          type: string
+          example: '01001234567'
+        openingBalance:
+          type: number
+          example: 5000.00
+        isActive:
+          type: boolean
+          example: true
+        totalPurchases:
+          type: number
+          example: 25000.00
+          description: Sum of all purchase totals for this supplier
+        totalReturns:
+          type: number
+          example: 2000.00
+          description: Sum of all purchase return totals
+        netPurchases:
+          type: number
+          example: 23000.00
+          description: Total purchases minus total returns
+        totalPaid:
+          type: number
+          example: 15000.00
+          description: Sum of amounts paid at purchase time plus separate payments
+        remaining:
+          type: number
+          example: 13000.00
+          description: Current outstanding remaining balance owed to/from the supplier
+
+    PageMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        totalPages:
+          type: integer
+          example: 5
