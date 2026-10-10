@@ -169,6 +169,7 @@ model Purchase {
   supplierId Int
   supplier   Supplier   @relation(fields: [supplierId], references: [id])
   date       DateTime   @default(now())
+  discount   Decimal    @default(0) @db.Decimal(12, 2)
   total      Decimal    @default(0) @db.Decimal(12, 2)
   paid       Decimal    @default(0) @db.Decimal(12, 2)
   note       String?
