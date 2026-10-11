@@ -24,6 +24,9 @@ const itemSwagger = YAML.load(
 const supplierSwagger = YAML.load(
   path.join(process.cwd(), 'src/docs/supplier.swagger.yaml'),
 );
+const purchaseSwagger = YAML.load(
+  path.join(process.cwd(), 'src/docs/purchase.swagger.yaml'),
+);
 
 const swaggerDocument = {
   ...authSwagger,
@@ -31,15 +34,18 @@ const swaggerDocument = {
     ...authSwagger.paths,
     ...itemSwagger.paths,
     ...supplierSwagger.paths,
+    ...purchaseSwagger.paths,
   },
   components: {
     ...authSwagger.components,
     ...itemSwagger.components,
     ...supplierSwagger.components,
+    ...purchaseSwagger.components,
     schemas: {
       ...authSwagger.components?.schemas,
       ...itemSwagger.components?.schemas,
       ...supplierSwagger.components?.schemas,
+      ...purchaseSwagger.components?.schemas,
     },
   },
 };
