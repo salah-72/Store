@@ -28,5 +28,12 @@ export const updateCustomerSchema = z
   .strict()
   .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
 
+export const setCustomerStatusSchema = z
+  .object({
+    isActive: z.boolean(),
+  })
+  .strict();
+
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;
+export type SetCustomerStatusInput = z.infer<typeof setCustomerStatusSchema>;

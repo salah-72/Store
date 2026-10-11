@@ -46,3 +46,10 @@ export async function updateCustomer(id: number, input: UpdateCustomerInput) {
     },
   });
 }
+
+export async function setCustomerStatus(id: number, isActive: boolean) {
+  const customer = await prisma.customer.findUnique({ where: { id } });
+  if (!customer) throw new appError('Customer not found', 404);
+
+  return prisma.customer.update({ where: { id }, data: { isActive } });
+}
