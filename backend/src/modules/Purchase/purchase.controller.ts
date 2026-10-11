@@ -3,8 +3,10 @@ import { Request, Response } from 'express';
 import * as service from './purchase.service';
 import {
   CreatePurchaseInput,
+  ListPurchasesQuery,
   UpdatePurchaseInput,
 } from './purchase.validation';
+import { pageMeta } from '@/common/utils/schemas';
 
 export const createPurchase = catchAsync(
   async (req: Request, res: Response) => {
@@ -27,3 +29,15 @@ export const updatePurchase = catchAsync(
     res.json({ success: true, data: purchase });
   },
 );
+
+export const listPurchases = catchAsync(async (req: Request, res: Response) => {
+  const q = req.query as unknown as ListPurchasesQuery;
+  q.page = Number(q.page) || 1;
+  q.limit = Number(q.limit) || 20;
+  const { purchases, total } = await service.listPurchases(q);
+  res.json({
+    success: true,
+    data: purchases,
+    meta: pageMeta(total, q.page, q.limit),
+  });
+});

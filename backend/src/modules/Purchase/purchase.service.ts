@@ -1,12 +1,19 @@
 import { prisma } from '@/config/postgres';
 import {
   CreatePurchaseInput,
+  ListPurchasesQuery,
   PurchaseLineInput,
   UpdatePurchaseInput,
 } from './purchase.validation';
 import appError from '@/common/utils/appError';
 import { Prisma } from '@prisma/client';
-import { cairoDay, cairoToday, hasExpiry } from '@/common/utils/date';
+import {
+  addDaysYMD,
+  cairoDay,
+  cairoStartOfDay,
+  cairoToday,
+  hasExpiry,
+} from '@/common/utils/date';
 import {
   batchDeltas,
   invoiceTotals,
@@ -306,4 +313,38 @@ export async function updatePurchase(id: number, input: UpdatePurchaseInput) {
     { timeout: 40000 },
   );
   return getPurchase(id);
+}
+
+export async function listPurchases(q: ListPurchasesQuery) {
+  const where: Prisma.PurchaseWhereInput = {};
+  if (q.supplierId) where.supplierId = q.supplierId;
+  if (q.from || q.to) {
+    where.date = {
+      ...(q.from ? { gte: cairoStartOfDay(q.from) } : {}),
+      ...(q.to ? { lt: cairoStartOfDay(addDaysYMD(q.to, 1)) } : {}), // the whole "to" day
+    };
+  }
+
+  const [total, rows] = await Promise.all([
+    prisma.purchase.count({ where }),
+    prisma.purchase.findMany({
+      where,
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      skip: (q.page - 1) * q.limit,
+      take: q.limit,
+      include: {
+        supplier: { select: { id: true, name: true } },
+        _count: { select: { lines: true } },
+      },
+    }),
+  ]);
+
+  return {
+    purchases: rows.map(({ _count, ...p }) => ({
+      ...p,
+      subtotal: p.total.add(p.discount),
+      linesCount: _count.lines,
+    })),
+    total,
+  };
 }

@@ -1,4 +1,4 @@
-import { money, ymd } from '@/common/utils/schemas';
+import { money, pagination, ymd } from '@/common/utils/schemas';
 import { z } from 'zod';
 
 const positiveInt = z.coerce.number().int().positive();
@@ -49,6 +49,18 @@ export const updatePurchaseSchema = z
   .strict()
   .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
 
+export const listPurchasesQuery = pagination
+  .extend({
+    supplierId: positiveInt.optional(),
+    from: ymd.optional(),
+    to: ymd.optional(),
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: '"from" must not be after "to"',
+    path: ['from'],
+  });
+
 export type PurchaseLineInput = z.infer<typeof purchaseLineSchema>;
 export type CreatePurchaseInput = z.infer<typeof createPurchaseSchema>;
 export type UpdatePurchaseInput = z.infer<typeof updatePurchaseSchema>;
+export type ListPurchasesQuery = z.infer<typeof listPurchasesQuery>;
