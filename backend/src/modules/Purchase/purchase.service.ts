@@ -348,3 +348,42 @@ export async function listPurchases(q: ListPurchasesQuery) {
     total,
   };
 }
+
+export async function deletePurchase(id: number) {
+  await prisma.$transaction(async (tx) => {
+    const purchase = await tx.purchase.findUnique({
+      where: { id },
+      include: { lines: true },
+    });
+    if (!purchase) throw new appError('Purchase not found', 404);
+
+    if ((await tx.purchaseReturn.count({ where: { purchaseId: id } })) > 0) {
+      throw new appError(
+        'This purchase has returns to the supplier: delete them first',
+        400,
+      );
+    }
+
+    for (const line of purchase.lines) {
+      const r = await tx.batch.updateMany({
+        where: {
+          id: line.batchId,
+          qtyRemaining: { gte: line.baseQty },
+          qtyReceived: { gte: line.baseQty },
+        },
+        data: {
+          qtyRemaining: { decrement: line.baseQty },
+          qtyReceived: { decrement: line.baseQty },
+        },
+      });
+      if (r.count !== 1) {
+        throw new appError(
+          'Part of this purchase was already sold or returned, so it cannot be deleted',
+          400,
+        );
+      }
+    }
+
+    await tx.purchase.delete({ where: { id } });
+  });
+}

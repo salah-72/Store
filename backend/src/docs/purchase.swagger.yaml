@@ -175,6 +175,44 @@ paths:
         '404':
           description: Purchase not found
 
+    delete:
+      summary: Delete Purchase Invoice
+      tags:
+        - Purchases
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Purchase ID
+      responses:
+        '200':
+          description: Purchase invoice deleted successfully and stock batches adjusted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 5
+        '400':
+          description: Purchase has active returns, or stock from this purchase has already been sold/consumed
+        '401':
+          description: Unauthorized
+        '404':
+          description: Purchase not found
+
 components:
   schemas:
     PurchaseLineInput:

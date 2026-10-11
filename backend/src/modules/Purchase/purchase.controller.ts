@@ -41,3 +41,11 @@ export const listPurchases = catchAsync(async (req: Request, res: Response) => {
     meta: pageMeta(total, q.page, q.limit),
   });
 });
+
+export const deletePurchase = catchAsync(
+  async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    await service.deletePurchase(id);
+    res.json({ success: true, data: { id } });
+  },
+);

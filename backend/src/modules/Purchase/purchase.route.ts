@@ -8,6 +8,7 @@ import {
 } from './purchase.validation';
 import {
   createPurchase,
+  deletePurchase,
   getPurchase,
   listPurchases,
   updatePurchase,
@@ -30,4 +31,5 @@ router.patch(
   validateRequest({ params: idParam, body: updatePurchaseSchema }),
   updatePurchase,
 );
+router.delete('/:id', validateRequest({ params: idParam }), deletePurchase);
 export default router;
