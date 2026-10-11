@@ -22,4 +22,11 @@ export const createCustomerSchema = z
   })
   .strict();
 
+export const updateCustomerSchema = z
+  .object(fields)
+  .partial()
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
+
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
+export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;
