@@ -1,12 +1,19 @@
 import { prisma } from '@/config/postgres';
-import { CreatePurchaseInput, PurchaseLineInput } from './purchase.validation';
+import {
+  CreatePurchaseInput,
+  PurchaseLineInput,
+  UpdatePurchaseInput,
+} from './purchase.validation';
 import appError from '@/common/utils/appError';
 import { Prisma } from '@prisma/client';
-import { cairoToday, hasExpiry } from '@/common/utils/date';
+import { cairoDay, cairoToday, hasExpiry } from '@/common/utils/date';
 import {
+  batchDeltas,
   invoiceTotals,
   prepareLines,
   resolvePurchaseDate,
+  returnCapViolations,
+  sumByBatch,
 } from './purchase.helpers';
 
 async function prepareFromInput(
@@ -141,4 +148,162 @@ export async function getPurchase(id: number) {
       hasExpiry: hasExpiry(l.batch.expiryDate),
     })),
   };
+}
+
+export async function updatePurchase(id: number, input: UpdatePurchaseInput) {
+  const today = cairoToday();
+
+  await prisma.$transaction(
+    async (tx) => {
+      const locked = await tx.purchase.updateMany({
+        where: { id },
+        data: { total: { increment: 0 } },
+      });
+      if (locked.count === 0) throw new appError('Purchase not found', 404);
+
+      const purchase = await tx.purchase.findUniqueOrThrow({
+        where: { id },
+        include: { lines: true },
+      });
+
+      const returnedRows = await tx.purchaseReturnLine.groupBy({
+        by: ['batchId'],
+        where: { purchaseReturn: { purchaseId: id } },
+        _sum: { baseQty: true },
+      });
+      const returned = new Map<number, number>(
+        returnedRows.map((r): [number, number] => [
+          r.batchId,
+          r._sum.baseQty ?? 0,
+        ]),
+      );
+      const hasReturns =
+        (await tx.purchaseReturn.count({ where: { purchaseId: id } })) > 0;
+
+      if (
+        input.supplierId !== undefined &&
+        input.supplierId !== purchase.supplierId
+      ) {
+        if (hasReturns) {
+          throw new appError(
+            'This purchase has returns, so its supplier cannot change',
+            400,
+          );
+        }
+        const supplier = await tx.supplier.findUnique({
+          where: { id: input.supplierId },
+        });
+        if (!supplier) throw new appError('Supplier not found', 404);
+      }
+
+      let subtotal = purchase.total.add(purchase.discount);
+      if (input.lines) {
+        const { prepared, subtotal: newSubtotal } = await prepareFromInput(
+          tx,
+          input.lines,
+        );
+        const withBatch = [];
+        for (const l of prepared) {
+          const batch = await tx.batch.upsert({
+            where: {
+              itemId_expiryDate_unitCost: {
+                itemId: l.itemId,
+                expiryDate: l.expiryDate,
+                unitCost: l.unitCost,
+              },
+            },
+            create: {
+              itemId: l.itemId,
+              expiryDate: l.expiryDate,
+              unitCost: l.unitCost,
+              qtyReceived: 0,
+              qtyRemaining: 0,
+            },
+            update: { qtyReceived: { increment: 0 } },
+          });
+          withBatch.push({ ...l, batchId: batch.id });
+        }
+
+        const oldQty = sumByBatch(purchase.lines);
+        const newQty = sumByBatch(withBatch);
+
+        const violated = returnCapViolations(returned, newQty);
+        if (violated.length > 0) {
+          throw new appError(
+            'Part of this purchase was already returned to the supplier: keep at least the returned quantity, or delete the return first',
+            400,
+          );
+        }
+
+        for (const { batchId, delta } of batchDeltas(oldQty, newQty)) {
+          if (delta > 0) {
+            await tx.batch.update({
+              where: { id: batchId },
+              data: {
+                qtyReceived: { increment: delta },
+                qtyRemaining: { increment: delta },
+              },
+            });
+            continue;
+          }
+
+          const need = -delta;
+          const r = await tx.batch.updateMany({
+            where: {
+              id: batchId,
+              qtyRemaining: { gte: need },
+              qtyReceived: { gte: need },
+            },
+            data: {
+              qtyReceived: { decrement: need },
+              qtyRemaining: { decrement: need },
+            },
+          });
+          if (r.count !== 1) {
+            throw new appError(`Cannot take ${need} units of this item`, 400);
+          }
+        }
+
+        await tx.purchaseLine.deleteMany({ where: { purchaseId: id } });
+        await tx.purchaseLine.createMany({
+          data: withBatch.map((l) => ({
+            purchaseId: id,
+            itemId: l.itemId,
+            baseQty: l.baseQty,
+            lineTotal: l.lineTotal,
+            batchId: l.batchId,
+          })),
+        });
+        subtotal = newSubtotal;
+      }
+
+      const discount =
+        input.discount !== undefined
+          ? new Prisma.Decimal(input.discount)
+          : purchase.discount;
+      const paid =
+        input.paid !== undefined
+          ? new Prisma.Decimal(input.paid)
+          : purchase.paid;
+      const { total } = invoiceTotals(subtotal, discount);
+
+      await tx.purchase.update({
+        where: { id },
+        data: {
+          supplierId: input.supplierId,
+          discount,
+          total,
+          paid,
+          note:
+            input.note === undefined ? undefined : input.note?.trim() || null,
+          date:
+            input.date && input.date !== cairoDay(purchase.date)
+              ? resolvePurchaseDate(input.date, today)
+              : undefined,
+        },
+      });
+    },
+    { timeout: 40000 },
+  );
+  return getPurchase(id);
 }

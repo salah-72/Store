@@ -33,5 +33,22 @@ export const createPurchaseSchema = z
   })
   .strict();
 
+export const updatePurchaseSchema = z
+  .object({
+    supplierId: positiveInt.optional(),
+    date: ymd.optional(),
+    note: z.string().trim().max(500).nullable().optional(),
+    paid: money.optional(),
+    discount: money.optional(),
+    lines: z
+      .array(purchaseLineSchema)
+      .min(1, 'At least one line is required')
+      .max(100)
+      .optional(),
+  })
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
+
 export type PurchaseLineInput = z.infer<typeof purchaseLineSchema>;
 export type CreatePurchaseInput = z.infer<typeof createPurchaseSchema>;
+export type UpdatePurchaseInput = z.infer<typeof updatePurchaseSchema>;

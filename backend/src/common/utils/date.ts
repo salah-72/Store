@@ -30,6 +30,9 @@ export const addDaysYMD = (ymd: string, n: number) => {
   return toYMD(d);
 };
 
+export const cairoDay = (d: Date) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(d);
+
 export const cairoStartOfDay = (ymd: string) => {
   const [y, m, d] = ymd.split('-').map(Number);
   for (const offset of [2, 3]) {

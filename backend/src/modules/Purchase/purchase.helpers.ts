@@ -91,3 +91,33 @@ export function invoiceTotals(
 
   return { total };
 }
+
+export type BatchQty = { batchId: number; baseQty: number };
+
+export function sumByBatch(lines: BatchQty[]) {
+  const m = new Map<number, number>();
+  for (const l of lines) m.set(l.batchId, (m.get(l.batchId) ?? 0) + l.baseQty);
+  return m;
+}
+
+export function returnCapViolations(
+  returned: Map<number, number>,
+  newQty: Map<number, number>,
+) {
+  return [...returned]
+    .filter(([batchId, qty]) => (newQty.get(batchId) ?? 0) < qty)
+    .map(([batchId]) => batchId);
+}
+
+export function batchDeltas(
+  oldQty: Map<number, number>,
+  newQty: Map<number, number>,
+) {
+  const ids = new Set([...oldQty.keys(), ...newQty.keys()]);
+  const deltas: { batchId: number; delta: number }[] = [];
+  for (const batchId of ids) {
+    const delta = (newQty.get(batchId) ?? 0) - (oldQty.get(batchId) ?? 0);
+    if (delta !== 0) deltas.push({ batchId, delta });
+  }
+  return deltas.sort((a, b) => a.delta - b.delta);
+}
