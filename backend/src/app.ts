@@ -6,6 +6,7 @@ import path from 'path';
 import authRouter from './modules/Auth/routes/authRouter';
 import itemRouter from './modules/items/item.routes';
 import supplierRouter from './modules/Suppliers/supplier.routes';
+import purchaseRouter from './modules/Purchase/purchase.route';
 import errorHandler from './common/middlewares/errorHandler';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
@@ -74,6 +75,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/auth', authRouter);
 app.use('/items', itemRouter);
 app.use('/suppliers', supplierRouter);
+app.use('/purchase', purchaseRouter);
 
 app.use(errorHandler);
 
