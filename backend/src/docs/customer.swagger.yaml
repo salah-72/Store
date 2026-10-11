@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  title: Agricultural Store API - Customers Module
+  version: 1.0.0
+  description: Customer Accounts and Initial Balance Management API Documentation.
+
+paths:
+  /customers:
+    post:
+      summary: Create New Customer
+      tags:
+        - Customers
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerInput'
+      responses:
+        '201':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          description: Validation error or customer name already exists
+        '401':
+          description: Unauthorized
+
+components:
+  schemas:
+    CreateCustomerInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'El-Giza Agricultural Cooperative'
+        phone:
+          type: string
+          default: ''
+          example: '01012345678'
+        openingBalance:
+          type: number
+          minimum: -9999999.99
+          maximum: 9999999.99
+          default: 0
+          example: 2500.00
+          description: 'Signed initial balance (Positive indicates customer owes store, negative indicates store owes customer)'
+
+    CustomerResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'El-Giza Agricultural Cooperative'
+        phone:
+          type: string
+          example: '01012345678'
+        openingBalance:
+          type: number
+          example: 2500.00
+        isActive:
+          type: boolean
+          example: true
