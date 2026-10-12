@@ -1,0 +1,157 @@
+openapi: 3.0.0
+info:
+  title: Agricultural Store API - Sale Returns Module
+  version: 1.0.0
+  description: Sales Return and Inventory Restocking API Documentation.
+
+paths:
+  /sale-returns/{id}:
+    get:
+      summary: Get Sales Return Details
+      tags:
+        - Sale Returns
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Sale Return ID
+      responses:
+        '200':
+          description: Sale return details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SaleReturnDetailResponse'
+        '400':
+          description: Invalid ID parameter
+        '401':
+          description: Unauthorized
+        '404':
+          description: Sale return not found
+
+components:
+  schemas:
+    SaleReturnBatchResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        expiryDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2028-06-30T00:00:00.000Z'
+
+    SaleReturnLineResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 4
+        saleReturnId:
+          type: integer
+          example: 1
+        itemId:
+          type: integer
+          example: 1
+        baseQty:
+          type: integer
+          example: 10
+          description: Quantity returned in base units
+        lineTotal:
+          type: number
+          example: 1500.00
+          description: Refund value for this line
+        item:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: 'Urea Fertilizer 46%'
+            unit:
+              type: string
+              example: 'GRAM'
+        batch:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 10
+            expiryDate:
+              type: string
+              format: date-time
+              nullable: true
+              example: '2028-06-30T00:00:00.000Z'
+
+    SaleReturnDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        saleId:
+          type: integer
+          example: 12
+        customerId:
+          type: integer
+          nullable: true
+          example: 1
+        date:
+          type: string
+          format: date-time
+          example: '2026-10-14T10:00:00.000Z'
+        total:
+          type: number
+          example: 1500.00
+          description: Total financial credit granted for the return
+        cashRefund:
+          type: number
+          example: 500.00
+          description: Cash amount refunded immediately to the customer
+        note:
+          type: string
+          nullable: true
+          example: 'Customer returned unused bags due to project downsizing'
+        customer:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: 'El-Giza Agricultural Cooperative'
+        sale:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 12
+            date:
+              type: string
+              format: date-time
+              example: '2026-10-12T00:00:00.000Z'
+            total:
+              type: number
+              example: 7400.00
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleReturnLineResponse'
