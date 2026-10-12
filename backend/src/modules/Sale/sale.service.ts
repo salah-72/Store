@@ -1,6 +1,12 @@
-import { cairoDay, cairoToday } from '@/common/utils/date';
+import {
+  addDaysYMD,
+  cairoDay,
+  cairoStartOfDay,
+  cairoToday,
+} from '@/common/utils/date';
 import {
   CreateSaleInput,
+  ListSalesQuery,
   SaleLineInput,
   UpdateSaleInput,
 } from './sale.validation';
@@ -358,4 +364,39 @@ export async function deleteSale(id: number) {
     );
     await tx.sale.delete({ where: { id } });
   });
+}
+
+export async function listSales(q: ListSalesQuery) {
+  const where: Prisma.SaleWhereInput = {};
+  if (q.customerId) where.customerId = q.customerId;
+  if (q.cash) where.customerId = null;
+  if (q.from || q.to) {
+    where.date = {
+      ...(q.from ? { gte: cairoStartOfDay(q.from) } : {}),
+      ...(q.to ? { lt: cairoStartOfDay(addDaysYMD(q.to, 1)) } : {}), // the whole "to" day
+    };
+  }
+
+  const [total, rows] = await Promise.all([
+    prisma.sale.count({ where }),
+    prisma.sale.findMany({
+      where,
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      skip: (q.page - 1) * q.limit,
+      take: q.limit,
+      include: {
+        customer: { select: { id: true, name: true } },
+        _count: { select: { lines: true } },
+      },
+    }),
+  ]);
+
+  return {
+    sales: rows.map(({ _count, ...s }) => ({
+      ...s,
+      subtotal: s.total.add(s.discount),
+      linesCount: _count.lines,
+    })),
+    total,
+  };
 }

@@ -46,6 +46,26 @@ export const updateSaleSchema = z
   .strict()
   .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
 
+export const listSalesQuery = pagination
+  .extend({
+    customerId: positiveInt.optional(),
+    cash: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((v) => v === 'true'),
+    from: ymd.optional(),
+    to: ymd.optional(),
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: '"from" must not be after "to"',
+    path: ['from'],
+  })
+  .refine((q) => !(q.cash && q.customerId), {
+    message: 'Use either "cash" or "customerId", not both',
+    path: ['cash'],
+  });
+
 export type SaleLineInput = z.infer<typeof saleLineSchema>;
 export type CreateSaleInput = z.infer<typeof createSaleSchema>;
 export type UpdateSaleInput = z.infer<typeof updateSaleSchema>;
+export type ListSalesQuery = z.infer<typeof listSalesQuery>;

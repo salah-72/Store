@@ -1,7 +1,22 @@
 import catchAsync from '@/common/utils/catchAsync';
 import * as service from './sale.service';
 import { Request, Response } from 'express';
-import { CreateSaleInput, UpdateSaleInput } from './sale.validation';
+import {
+  CreateSaleInput,
+  ListSalesQuery,
+  UpdateSaleInput,
+} from './sale.validation';
+import { pageMeta } from '@/common/utils/schemas';
+
+export const list = catchAsync(async (req: Request, res: Response) => {
+  const q = req.query as unknown as ListSalesQuery;
+  const { sales, total } = await service.listSales(q);
+  res.json({
+    success: true,
+    data: sales,
+    meta: pageMeta(total, q.page, q.limit),
+  });
+});
 
 export const create = catchAsync(async (req: Request, res: Response) => {
   const input = req.body as CreateSaleInput;

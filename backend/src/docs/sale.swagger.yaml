@@ -6,6 +6,76 @@ info:
 
 paths:
   /sales:
+    get:
+      summary: List sales invoices with pagination, customer filter, cash sale filter, and date range
+      tags:
+        - Sales
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Number of sales per page
+        - in: query
+          name: customerId
+          schema:
+            type: integer
+            minimum: 1
+          description: Filter sales by specific customer ID (mutually exclusive with 'cash')
+        - in: query
+          name: cash
+          schema:
+            type: string
+            enum: [true, false]
+          description: Filter walk-in cash sales where customerId is null (mutually exclusive with 'customerId')
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+            example: '2026-01-01'
+          description: Start date filter (YYYY-MM-DD)
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+            example: '2026-12-31'
+          description: End date filter (YYYY-MM-DD, inclusive)
+      responses:
+        '200':
+          description: Sales invoices retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SaleListItemResponse'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+        '400':
+          description: Invalid query parameters (e.g., passing both cash and customerId, or 'from' after 'to')
+        '401':
+          description: Unauthorized
+
     post:
       summary: Create New Sales Invoice (FEFO Inventory Deduction)
       tags:
@@ -401,3 +471,75 @@ components:
           items:
             $ref: '#/components/schemas/SaleLineInput'
           description: Replacing lines will recalculate FEFO batch outflows and enforce return quantity caps
+
+    PageMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        totalPages:
+          type: integer
+          example: 5
+
+    SaleListItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        customerId:
+          type: integer
+          nullable: true
+          example: 1
+        date:
+          type: string
+          format: date-time
+          example: '2026-10-12T00:00:00.000Z'
+        discount:
+          type: number
+          example: 100.00
+        total:
+          type: number
+          example: 7400.00
+        paid:
+          type: number
+          example: 7400.00
+        note:
+          type: string
+          nullable: true
+          example: 'Paid in full via cash'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-12T14:30:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-12T14:30:00.000Z'
+        subtotal:
+          type: number
+          example: 7500.00
+        linesCount:
+          type: integer
+          example: 3
+          description: Total number of item lines in this sale invoice
+        customer:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: 'El-Giza Agricultural Cooperative'
+            phone:
+              type: string
+              example: '01012345678'
