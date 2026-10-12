@@ -8,6 +8,7 @@ import itemRouter from './modules/items/item.routes';
 import supplierRouter from './modules/Suppliers/supplier.routes';
 import purchaseRouter from './modules/Purchase/purchase.route';
 import customerRouter from './modules/Customers/customer.routes';
+import salesRouter from './modules/Sale/sale.routes';
 import errorHandler from './common/middlewares/errorHandler';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
@@ -31,6 +32,9 @@ const purchaseSwagger = YAML.load(
 const customerSwagger = YAML.load(
   path.join(process.cwd(), 'src/docs/customer.swagger.yaml'),
 );
+const saleSwagger = YAML.load(
+  path.join(process.cwd(), 'src/docs/sale.swagger.yaml'),
+);
 
 const swaggerDocument = {
   ...authSwagger,
@@ -40,6 +44,7 @@ const swaggerDocument = {
     ...supplierSwagger.paths,
     ...purchaseSwagger.paths,
     ...customerSwagger.paths,
+    ...saleSwagger.paths,
   },
   components: {
     ...authSwagger.components,
@@ -47,12 +52,14 @@ const swaggerDocument = {
     ...supplierSwagger.components,
     ...purchaseSwagger.components,
     ...customerSwagger.components,
+    ...saleSwagger.components,
     schemas: {
       ...authSwagger.components?.schemas,
       ...itemSwagger.components?.schemas,
       ...supplierSwagger.components?.schemas,
       ...purchaseSwagger.components?.schemas,
       ...customerSwagger.components?.schemas,
+      ...saleSwagger.components?.schemas,
     },
   },
 };
@@ -90,6 +97,7 @@ app.use('/items', itemRouter);
 app.use('/suppliers', supplierRouter);
 app.use('/purchase', purchaseRouter);
 app.use('/customer', customerRouter);
+app.use('/sales', salesRouter);
 
 app.use(errorHandler);
 
