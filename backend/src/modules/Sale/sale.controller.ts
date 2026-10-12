@@ -8,3 +8,8 @@ export const create = catchAsync(async (req: Request, res: Response) => {
   const sale = await service.createSale(input);
   res.status(201).json({ success: true, data: sale });
 });
+
+export const getSale = catchAsync(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  res.json({ success: true, data: await service.getSale(id) });
+});
