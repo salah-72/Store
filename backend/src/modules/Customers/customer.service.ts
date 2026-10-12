@@ -6,6 +6,8 @@ import {
 } from './customer.validation';
 import appError from '@/common/utils/appError';
 import { Prisma } from '@prisma/client';
+import { buildStatement, Move } from '@/common/utils/statement';
+import { addDaysYMD, cairoStartOfDay } from '@/common/utils/date';
 
 const ZERO = new Prisma.Decimal(0);
 const sum = (v: Prisma.Decimal | null | undefined) => v ?? ZERO;
@@ -170,4 +172,76 @@ export async function getCustomer(id: number) {
 
   const sums = await summariesFor([customer]);
   return { ...customer, ...sums.get(id)! };
+}
+
+export async function getStatement(id: number, from?: string, to?: string) {
+  const customer = await prisma.customer.findUnique({
+    where: { id },
+    select: { id: true, name: true, phone: true, openingBalance: true },
+  });
+  if (!customer) throw new appError('Customer not found', 404);
+
+  const [sales, payments, returns] = await Promise.all([
+    prisma.sale.findMany({
+      where: { customerId: id },
+      select: { id: true, date: true, total: true, paid: true, note: true },
+    }),
+    prisma.payment.findMany({
+      where: { customerId: id },
+      select: { id: true, date: true, amount: true, note: true },
+    }),
+    prisma.saleReturn.findMany({
+      where: { customerId: id },
+      select: {
+        id: true,
+        date: true,
+        total: true,
+        cashRefund: true,
+        note: true,
+      },
+    }),
+  ]);
+
+  const moves: Move[] = [
+    ...sales.map((s) => ({
+      date: s.date,
+      type: 'SALE' as const,
+      ref: s.id,
+      debit: s.total,
+      credit: s.paid,
+      note: s.note,
+    })),
+    ...payments.map((p) => ({
+      date: p.date,
+      type: 'PAYMENT' as const,
+      ref: p.id,
+      debit: ZERO,
+      credit: p.amount,
+      note: p.note,
+    })),
+    ...returns.map((r) => ({
+      date: r.date,
+      type: 'RETURN' as const,
+      ref: r.id,
+      debit: r.cashRefund,
+      credit: r.total,
+      note: r.note,
+    })),
+  ];
+
+  const result = buildStatement(
+    customer.openingBalance,
+    moves,
+    from ? cairoStartOfDay(from) : undefined,
+    to ? cairoStartOfDay(addDaysYMD(to, 1)) : undefined,
+  );
+
+  return {
+    customer: { id: customer.id, name: customer.name, phone: customer.phone },
+    period: { from: from ?? null, to: to ?? null },
+    openingBalance: result.opening,
+    rows: result.rows,
+    totals: result.totals,
+    closingBalance: result.closing,
+  };
 }

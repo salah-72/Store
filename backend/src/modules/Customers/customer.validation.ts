@@ -43,7 +43,15 @@ export const listCustomersQuery = pagination.extend({
     .transform((v) => v === 'true'),
 });
 
+export const statementQuery = z
+  .object({ from: ymd.optional(), to: ymd.optional() })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: '"from" must not be after "to"',
+    path: ['from'],
+  });
+
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;
 export type SetCustomerStatusInput = z.infer<typeof setCustomerStatusSchema>;
 export type ListCustomersQuery = z.infer<typeof listCustomersQuery>;
+export type StatementQuery = z.infer<typeof statementQuery>;
