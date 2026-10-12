@@ -335,3 +335,27 @@ export async function updateSale(id: number, input: UpdateSaleInput) {
 
   return getSale(id);
 }
+
+export async function deleteSale(id: number) {
+  await prisma.$transaction(async (tx) => {
+    const locked = await tx.sale.updateMany({
+      where: { id },
+      data: { total: { increment: 0 } },
+    });
+    if (locked.count === 0) throw new appError('Sale not found', 404);
+
+    if ((await tx.saleReturn.count({ where: { saleId: id } })) > 0) {
+      throw new appError('This sale has returns: delete them first', 409);
+    }
+
+    const lines = await tx.saleLine.findMany({
+      where: { saleId: id },
+      include: { batches: true },
+    });
+    await restoreStock(
+      tx,
+      lines.flatMap((l) => l.batches),
+    );
+    await tx.sale.delete({ where: { id } });
+  });
+}
