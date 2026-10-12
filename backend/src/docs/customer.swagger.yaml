@@ -100,6 +100,40 @@ paths:
           description: Unauthorized
 
   /customers/{id}:
+    get:
+      summary: Get single customer details with financial summary
+      tags:
+        - Customers
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Customer ID
+      responses:
+        '200':
+          description: Customer details retrieved successfully with financial summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/EnrichedCustomerResponse'
+        '400':
+          description: Invalid ID parameter
+        '401':
+          description: Unauthorized
+        '404':
+          description: Customer not found
+
     patch:
       summary: Update Customer Details
       tags:

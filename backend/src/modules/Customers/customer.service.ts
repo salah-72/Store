@@ -163,3 +163,11 @@ export async function listCustomers(q: ListCustomersQuery) {
     total,
   };
 }
+
+export async function getCustomer(id: number) {
+  const customer = await prisma.customer.findUnique({ where: { id } });
+  if (!customer) throw new appError('Customer not found', 404);
+
+  const sums = await summariesFor([customer]);
+  return { ...customer, ...sums.get(id)! };
+}

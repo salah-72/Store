@@ -12,6 +12,7 @@ import {
   update,
   setStatus,
   getCustomerList,
+  getCustomer,
 } from './customer.controller';
 import { idParam } from '../Suppliers/supplier.validation';
 
@@ -29,6 +30,7 @@ router.post(
   validateRequest({ body: createCustomerSchema }),
   createCustomer,
 );
+router.get('/:id', validateRequest({ params: idParam }), getCustomer);
 router.patch(
   '/:id',
   validateRequest({ params: idParam, body: updateCustomerSchema }),

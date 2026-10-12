@@ -47,3 +47,8 @@ export const getCustomerList = catchAsync(
     });
   },
 );
+
+export const getCustomer = catchAsync(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  res.json({ success: true, data: await service.getCustomer(id) });
+});
