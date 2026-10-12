@@ -30,5 +30,22 @@ export const createSaleSchema = z
   })
   .strict();
 
+export const updateSaleSchema = z
+  .object({
+    customerId: positiveInt.nullable().optional(),
+    date: ymd.optional(),
+    note: z.string().trim().max(500).nullable().optional(),
+    discount: money.optional(),
+    paid: money.optional(),
+    lines: z
+      .array(saleLineSchema)
+      .min(1, 'At least one line is required')
+      .max(100)
+      .optional(),
+  })
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
+
 export type SaleLineInput = z.infer<typeof saleLineSchema>;
 export type CreateSaleInput = z.infer<typeof createSaleSchema>;
+export type UpdateSaleInput = z.infer<typeof updateSaleSchema>;

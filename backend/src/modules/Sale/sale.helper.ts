@@ -87,3 +87,9 @@ export function planFefo(batches: FefoBatch[], need: number) {
   }
   return { slices, missing: left };
 }
+
+export function sumSlices(slices: { batchId: number; baseQty: number }[]) {
+  const m = new Map<number, number>();
+  for (const s of slices) m.set(s.batchId, (m.get(s.batchId) ?? 0) + s.baseQty);
+  return m;
+}

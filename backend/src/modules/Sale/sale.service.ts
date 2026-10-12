@@ -1,5 +1,9 @@
-import { cairoToday } from '@/common/utils/date';
-import { CreateSaleInput, SaleLineInput } from './sale.validation';
+import { cairoDay, cairoToday } from '@/common/utils/date';
+import {
+  CreateSaleInput,
+  SaleLineInput,
+  UpdateSaleInput,
+} from './sale.validation';
 import {
   planFefo,
   PricedLine,
@@ -7,6 +11,7 @@ import {
   resolveSaleDate,
   saleTotals,
   Slice,
+  sumSlices,
 } from './sale.helper';
 import { prisma } from '@/config/postgres';
 import appError from '@/common/utils/appError';
@@ -131,6 +136,18 @@ async function sellLines(
   }
 }
 
+async function restoreStock(
+  tx: Tx,
+  slices: { batchId: number; baseQty: number }[],
+) {
+  for (const [batchId, qty] of sumSlices(slices)) {
+    await tx.batch.update({
+      where: { id: batchId },
+      data: { qtyRemaining: { increment: qty } },
+    });
+  }
+}
+
 export async function createSale(input: CreateSaleInput) {
   const customerId = input.customerId ?? null;
   const today = cairoToday();
@@ -224,4 +241,97 @@ export async function getSale(id: number) {
     profit: sale.total.sub(totalCost),
     lines,
   };
+}
+
+export async function updateSale(id: number, input: UpdateSaleInput) {
+  const today = cairoToday();
+  await prisma.$transaction(
+    async (tx) => {
+      const locked = await tx.sale.updateMany({
+        where: { id },
+        data: { total: { increment: 0 } },
+      });
+      if (locked.count === 0) throw new appError('Sale not found', 404);
+
+      const sale = await tx.sale.findUniqueOrThrow({
+        where: { id },
+        include: { lines: { include: { batches: true } } },
+      });
+
+      const hasReturns =
+        (await tx.saleReturn.count({ where: { saleId: id } })) > 0;
+
+      const customerChanged =
+        input.customerId !== undefined && input.customerId !== sale.customerId;
+      if (customerChanged) {
+        if (hasReturns)
+          throw new appError(
+            'This sale has returns, so its customer cannot change',
+            409,
+          );
+        if (input.customerId !== null && input.customerId !== undefined) {
+          const customer = await prisma.customer.findUnique({
+            where: { id: input.customerId },
+          });
+          if (!customer) throw new appError('Customer not found', 404);
+        }
+      }
+      const hasCustomer =
+        (input.customerId === undefined
+          ? sale.customerId
+          : input.customerId) !== null;
+
+      let subtotal = sale.total.add(sale.discount);
+      if (input.lines) {
+        if (hasReturns) {
+          throw new appError(
+            'This sale has returns, so its lines cannot change: delete the returns first',
+            409,
+          );
+        }
+
+        await restoreStock(
+          tx,
+          sale.lines.flatMap((l) => l.batches),
+        );
+        await tx.saleLine.deleteMany({ where: { saleId: id } });
+
+        const r = await loadAndPrice(tx, input.lines);
+        await sellLines(tx, id, r.priced, r.items, todayAsDate(today));
+        subtotal = r.subtotal;
+      }
+
+      const discount =
+        input.discount !== undefined
+          ? new Prisma.Decimal(input.discount)
+          : sale.discount;
+      const afterDiscount = subtotal.sub(discount);
+      const paid =
+        input.paid !== undefined
+          ? new Prisma.Decimal(input.paid)
+          : hasCustomer
+            ? sale.paid
+            : afterDiscount;
+      const { total } = saleTotals(subtotal, discount, paid, hasCustomer);
+
+      await tx.sale.update({
+        where: { id },
+        data: {
+          customerId: input.customerId,
+          discount,
+          total,
+          paid,
+          note:
+            input.note === undefined ? undefined : input.note?.trim() || null,
+          date:
+            input.date && input.date !== cairoDay(sale.date)
+              ? resolveSaleDate(input.date, today)
+              : undefined,
+        },
+      });
+    },
+    { timeout: 50000 },
+  );
+
+  return getSale(id);
 }
