@@ -3,16 +3,27 @@ import { protect } from '../Auth/controllers/authController';
 import { validateRequest } from '@/common/middlewares/validation';
 import {
   createCustomerSchema,
+  listCustomersQuery,
   setCustomerStatusSchema,
   updateCustomerSchema,
 } from './customer.validation';
-import { createCustomer, update, setStatus } from './customer.controller';
+import {
+  createCustomer,
+  update,
+  setStatus,
+  getCustomerList,
+} from './customer.controller';
 import { idParam } from '../Suppliers/supplier.validation';
 
 const router = Router();
 
 router.use(protect);
 
+router.get(
+  '/',
+  validateRequest({ query: listCustomersQuery }),
+  getCustomerList,
+);
 router.post(
   '/',
   validateRequest({ body: createCustomerSchema }),

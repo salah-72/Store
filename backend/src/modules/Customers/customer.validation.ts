@@ -34,6 +34,16 @@ export const setCustomerStatusSchema = z
   })
   .strict();
 
+export const listCustomersQuery = pagination.extend({
+  search: z.string().trim().max(100).optional(),
+  active: z.enum(['true', 'false', 'all']).default('true'),
+  debtors: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
+});
+
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;
 export type SetCustomerStatusInput = z.infer<typeof setCustomerStatusSchema>;
+export type ListCustomersQuery = z.infer<typeof listCustomersQuery>;

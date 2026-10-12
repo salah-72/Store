@@ -2,10 +2,13 @@ import catchAsync from '@/common/utils/catchAsync';
 import { Request, Response } from 'express';
 import {
   CreateCustomerInput,
+  ListCustomersQuery,
   SetCustomerStatusInput,
   UpdateCustomerInput,
 } from './customer.validation';
 import * as service from './customer.service';
+import { ListSuppliersQuery } from '../Suppliers/supplier.validation';
+import { pageMeta } from '@/common/utils/schemas';
 
 export const createCustomer = catchAsync(
   async (req: Request, res: Response) => {
@@ -30,3 +33,17 @@ export const setStatus = catchAsync(async (req: Request, res: Response) => {
     data: await service.setCustomerStatus(id, isActive),
   });
 });
+
+export const getCustomerList = catchAsync(
+  async (req: Request, res: Response) => {
+    const q = req.query as unknown as ListCustomersQuery;
+    q.page = Number(q.page) || 1;
+    q.limit = Number(q.limit) || 20;
+    const { customers, total } = await service.listCustomers(q);
+    res.json({
+      success: true,
+      data: customers,
+      meta: pageMeta(total, q.page, q.limit),
+    });
+  },
+);

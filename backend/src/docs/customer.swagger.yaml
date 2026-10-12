@@ -6,6 +6,69 @@ info:
 
 paths:
   /customers:
+    get:
+      summary: List customers with financial summaries, pagination, and filters
+      tags:
+        - Customers
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Number of customers per page
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 100
+          description: Search by customer name or phone number (case-insensitive)
+        - in: query
+          name: active
+          schema:
+            type: string
+            enum: [true, false, all]
+            default: 'true'
+          description: Filter by active status
+        - in: query
+          name: debtors
+          schema:
+            type: string
+            enum: [true, false]
+          description: Filter customers where remaining balance is greater than zero (debtors)
+      responses:
+        '200':
+          description: Customers retrieved successfully with financial summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EnrichedCustomerResponse'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+        '400':
+          description: Invalid query parameters
+        '401':
+          description: Unauthorized
+
     post:
       summary: Create New Customer
       tags:
@@ -35,6 +98,7 @@ paths:
           description: Validation error or customer name already exists
         '401':
           description: Unauthorized
+
   /customers/{id}:
     patch:
       summary: Update Customer Details
@@ -186,3 +250,58 @@ components:
           type: boolean
           example: false
           description: 'Set customer active state (true for active, false for inactive)'
+
+    EnrichedCustomerResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'El-Giza Agricultural Cooperative'
+        phone:
+          type: string
+          example: '01012345678'
+        openingBalance:
+          type: number
+          example: 2500.00
+        isActive:
+          type: boolean
+          example: true
+        totalSales:
+          type: number
+          example: 15000.00
+          description: Sum of all sales invoice totals for this customer
+        totalReturns:
+          type: number
+          example: 1000.00
+          description: Sum of all sales return totals
+        netSales:
+          type: number
+          example: 14000.00
+          description: Total sales minus total returns
+        totalPaid:
+          type: number
+          example: 10000.00
+          description: Sum of amounts paid at sale time plus separate payments
+        remaining:
+          type: number
+          example: 6500.00
+          description: Current outstanding remaining balance owed by/to the customer
+
+    PageMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        totalPages:
+          type: integer
+          example: 5
