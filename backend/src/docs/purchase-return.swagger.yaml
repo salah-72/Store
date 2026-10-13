@@ -1,0 +1,162 @@
+openapi: 3.0.0
+info:
+  title: Agricultural Store API - Purchase Returns Module
+  version: 1.0.0
+  description: Purchase Returns, Supplier Outflow Adjustments, and Inventory Stock Reduction API Documentation.
+
+paths:
+  /purchase-returns/{id}:
+    get:
+      summary: Get Purchase Return Details
+      tags:
+        - Purchase Returns
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Purchase Return ID
+      responses:
+        '200':
+          description: Purchase return details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PurchaseReturnDetailResponse'
+        '400':
+          description: Invalid ID parameter
+        '401':
+          description: Unauthorized
+        '404':
+          description: Purchase return not found
+
+components:
+  schemas:
+    PurchaseReturnBatchResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 15
+        expiryDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2028-06-30T00:00:00.000Z'
+        qtyRemaining:
+          type: integer
+          example: 80
+          description: Current remaining quantity in the batch
+
+    PurchaseReturnLineResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 2
+        purchaseReturnId:
+          type: integer
+          example: 1
+        itemId:
+          type: integer
+          example: 1
+        baseQty:
+          type: integer
+          example: 20
+          description: Quantity returned to supplier in base units
+        lineTotal:
+          type: number
+          example: 2500.00
+          description: Refund/credit value for this line
+        item:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: 'Urea Fertilizer 46%'
+            unit:
+              type: string
+              example: 'GRAM'
+        batch:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 15
+            expiryDate:
+              type: string
+              format: date-time
+              nullable: true
+              example: '2028-06-30T00:00:00.000Z'
+            qtyRemaining:
+              type: integer
+              example: 80
+
+    PurchaseReturnDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        purchaseId:
+          type: integer
+          example: 8
+        supplierId:
+          type: integer
+          example: 3
+        date:
+          type: string
+          format: date-time
+          example: '2026-10-14T10:00:00.000Z'
+        total:
+          type: number
+          example: 2500.00
+          description: Total financial credit or cash refund received from supplier
+        cashRefund:
+          type: number
+          example: 0.00
+          description: Cash amount refunded immediately by supplier
+        note:
+          type: string
+          nullable: true
+          example: 'Returned damaged fertilizer bags from shipment'
+        supplier:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 3
+            name:
+              type: string
+              example: 'Delta Agricultural Supplies Co.'
+        purchase:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 8
+            date:
+              type: string
+              format: date-time
+              example: '2026-10-10T00:00:00.000Z'
+            total:
+              type: number
+              example: 10000.00
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseReturnLineResponse'
