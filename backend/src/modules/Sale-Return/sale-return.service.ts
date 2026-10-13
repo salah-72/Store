@@ -3,10 +3,17 @@ import appError from '@/common/utils/appError';
 import {
   CreateSaleReturnInput,
   InvoiceLineInput,
+  ListSaleReturnsQuery,
   UpdateSaleReturnInput,
 } from './sale-return.validation';
 import { Prisma } from '@prisma/client';
-import { cairoDay, cairoToday, resolveDocDate } from '@/common/utils/date';
+import {
+  addDaysYMD,
+  cairoDay,
+  cairoStartOfDay,
+  cairoToday,
+  resolveDocDate,
+} from '@/common/utils/date';
 import {
   checkCashRefund,
   netFactor,
@@ -252,4 +259,37 @@ export async function deleteSaleReturn(id: number) {
     }
     await tx.saleReturn.delete({ where: { id } });
   });
+}
+
+export async function listSaleReturns(q: ListSaleReturnsQuery) {
+  const where: Prisma.SaleReturnWhereInput = {};
+  if (q.customerId) where.customerId = q.customerId;
+  if (q.saleId) where.saleId = q.saleId;
+  if (q.from || q.to) {
+    where.date = {
+      ...(q.from ? { gte: cairoStartOfDay(q.from) } : {}),
+      ...(q.to ? { lt: cairoStartOfDay(addDaysYMD(q.to, 1)) } : {}),
+    };
+  }
+
+  const [total, rows] = await Promise.all([
+    prisma.saleReturn.count({ where }),
+    prisma.saleReturn.findMany({
+      where,
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      skip: (q.page - 1) * q.limit,
+      take: q.limit,
+      include: {
+        customer: { select: { id: true, name: true } },
+        _count: { select: { lines: true } },
+      },
+    }),
+  ]);
+  return {
+    returns: rows.map(({ _count, ...r }) => ({
+      ...r,
+      linesCount: _count.lines,
+    })),
+    total,
+  };
 }

@@ -34,6 +34,19 @@ export const updateSaleReturnSchema = z
   .strict()
   .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
 
+export const listSaleReturnsQuery = pagination
+  .extend({
+    customerId: positiveInt.optional(),
+    saleId: positiveInt.optional(),
+    from: ymd.optional(),
+    to: ymd.optional(),
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: '"from" must not be after "to"',
+    path: ['from'],
+  });
+
 export type InvoiceLineInput = z.infer<typeof invoiceLine>;
 export type CreateSaleReturnInput = z.infer<typeof createSaleReturnSchema>;
 export type UpdateSaleReturnInput = z.infer<typeof updateSaleReturnSchema>;
+export type ListSaleReturnsQuery = z.infer<typeof listSaleReturnsQuery>;

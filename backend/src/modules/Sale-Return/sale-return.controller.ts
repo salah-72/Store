@@ -3,8 +3,10 @@ import { Request, Response } from 'express';
 import * as service from './sale-return.service';
 import {
   CreateSaleReturnInput,
+  ListSaleReturnsQuery,
   UpdateSaleReturnInput,
 } from './sale-return.validation';
+import { pageMeta } from '@/common/utils/schemas';
 
 export const getSaleReturn = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.id);
@@ -29,4 +31,14 @@ export const remove = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   await service.deleteSaleReturn(id);
   res.json({ success: true, data: { id } });
+});
+
+export const list = catchAsync(async (req: Request, res: Response) => {
+  const q = req.query as unknown as ListSaleReturnsQuery;
+  const { returns, total } = await service.listSaleReturns(q);
+  res.json({
+    success: true,
+    data: returns,
+    meta: pageMeta(total, q.page, q.limit),
+  });
 });
