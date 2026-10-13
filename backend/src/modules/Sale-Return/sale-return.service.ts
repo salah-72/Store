@@ -293,3 +293,32 @@ export async function listSaleReturns(q: ListSaleReturnsQuery) {
     total,
   };
 }
+
+export async function getReturnable(saleId: number) {
+  const sale = await loadSale(prisma, saleId);
+  if (!sale) throw new appError('Sale not found', 404);
+
+  const returned = await returnedBySlice(prisma, sale);
+  const factor = netFactor(sale.total, sale.total.add(sale.discount));
+
+  return {
+    saleId: sale.id,
+    customerId: sale.customerId,
+    lines: sale.lines.map((l) => {
+      const sold = l.baseQty;
+      const alreadyReturned = l.batches.reduce(
+        (s, b) => s + (returned.get(b.id) ?? 0),
+        0,
+      );
+      return {
+        saleLineId: l.id,
+        itemId: l.itemId,
+        itemName: l.item.name,
+        sold,
+        returned: alreadyReturned,
+        returnable: sold - alreadyReturned,
+        netUnitValue: l.lineTotal.mul(factor).div(sold).toDecimalPlaces(6),
+      };
+    }),
+  };
+}

@@ -42,3 +42,8 @@ export const list = catchAsync(async (req: Request, res: Response) => {
     meta: pageMeta(total, q.page, q.limit),
   });
 });
+
+export const returnable = catchAsync(async (req: Request, res: Response) => {
+  const saleId = Number(req.params.saleId);
+  res.json({ success: true, data: await service.getReturnable(saleId) });
+});

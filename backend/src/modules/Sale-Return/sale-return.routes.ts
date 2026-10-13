@@ -7,11 +7,13 @@ import {
   getSaleReturn,
   list,
   remove,
+  returnable,
   update,
 } from './sale-return.controller';
 import {
   createSaleReturnSchema,
   listSaleReturnsQuery,
+  saleIdParam,
   updateSaleReturnSchema,
 } from './sale-return.validation';
 
@@ -21,6 +23,11 @@ router.use(protect);
 
 router.get('/', validateRequest({ query: listSaleReturnsQuery }), list);
 router.post('/', validateRequest({ body: createSaleReturnSchema }), create);
+router.get(
+  '/returnable/:saleId',
+  validateRequest({ params: saleIdParam }),
+  returnable,
+);
 router.get('/:id', validateRequest({ params: idParam }), getSaleReturn);
 router.patch(
   '/:id',

@@ -46,6 +46,8 @@ export const listSaleReturnsQuery = pagination
     path: ['from'],
   });
 
+export const saleIdParam = z.object({ saleId: positiveInt });
+
 export type InvoiceLineInput = z.infer<typeof invoiceLine>;
 export type CreateSaleReturnInput = z.infer<typeof createSaleReturnSchema>;
 export type UpdateSaleReturnInput = z.infer<typeof updateSaleReturnSchema>;

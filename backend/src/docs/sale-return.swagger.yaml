@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Agricultural Store API - Sale Returns Module
   version: 1.0.0
-  description: Sales Return, Inventory Restocking, and Refund Accounting API Documentation.
+  description: Sales Return, Inventory Restocking, Returnable Eligibility, and Refund Accounting API Documentation.
 
 paths:
   /sale-returns:
@@ -105,6 +105,41 @@ paths:
           description: Validation error, sale not found, return quantity exceeds sold quantity, or invalid cash refund amount
         '401':
           description: Unauthorized
+
+  /sale-returns/returnable/{saleId}:
+    get:
+      summary: Get returnable quantities and remaining balances for a specific sale invoice
+      tags:
+        - Sale Returns
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: saleId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Sale ID to check return eligibility
+      responses:
+        '200':
+          description: Returnable sale lines retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ReturnableResponse'
+        '400':
+          description: Invalid sale ID parameter
+        '401':
+          description: Unauthorized
+        '404':
+          description: Sale not found
 
   /sale-returns/{id}:
     get:
@@ -454,6 +489,51 @@ components:
             name:
               type: string
               example: 'El-Giza Agricultural Cooperative'
+
+    ReturnableResponse:
+      type: object
+      properties:
+        saleId:
+          type: integer
+          example: 12
+        customerId:
+          type: integer
+          nullable: true
+          example: 1
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReturnableLineResponse'
+
+    ReturnableLineResponse:
+      type: object
+      properties:
+        saleLineId:
+          type: integer
+          example: 3
+          description: ID of the original sale line
+        itemId:
+          type: integer
+          example: 1
+        itemName:
+          type: string
+          example: 'Urea Fertilizer 46%'
+        sold:
+          type: integer
+          example: 50
+          description: Total quantity originally sold in base units
+        returned:
+          type: integer
+          example: 10
+          description: Quantity already returned in prior return transactions
+        returnable:
+          type: integer
+          example: 40
+          description: Net remaining quantity eligible for return
+        netUnitValue:
+          type: number
+          example: 140.00
+          description: Effective net unit price after accounting for invoice-level discounts
 
     PageMeta:
       type: object
