@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { protect } from '../Auth/controllers/authController';
 import { validateRequest } from '@/common/middlewares/validation';
 import { idParam } from '../Suppliers/supplier.validation';
-import { create, getSaleReturn, update } from './sale-return.controller';
+import {
+  create,
+  getSaleReturn,
+  remove,
+  update,
+} from './sale-return.controller';
 import {
   createSaleReturnSchema,
   updateSaleReturnSchema,
@@ -19,5 +24,6 @@ router.patch(
   validateRequest({ params: idParam, body: updateSaleReturnSchema }),
   update,
 );
+router.delete('/:id', validateRequest({ params: idParam }), remove);
 
 export default router;

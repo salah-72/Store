@@ -111,6 +111,44 @@ paths:
         '404':
           description: Sale return not found
 
+    delete:
+      summary: Delete Sales Return (Restored Inventory Re-reversed)
+      tags:
+        - Sale Returns
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Sale Return ID
+      responses:
+        '200':
+          description: Sale return deleted successfully and stock inventory decremented from batches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '401':
+          description: Unauthorized
+        '404':
+          description: Sale return not found
+        '409':
+          description: Conflict - Returned goods from this return were already resold and cannot be reversed
+
 components:
   schemas:
     InvoiceLineInput:

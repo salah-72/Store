@@ -229,3 +229,27 @@ export async function updateSaleReturn(
   });
   return getSaleReturn(id);
 }
+
+export async function deleteSaleReturn(id: number) {
+  await prisma.$transaction(async (tx) => {
+    const r = await tx.saleReturn.findUnique({
+      where: { id },
+      include: { lines: true },
+    });
+    if (!r) throw new appError('Sale return not found', 404);
+
+    for (const [batchId, q] of sumSlices(r.lines)) {
+      const res = await tx.batch.updateMany({
+        where: { id: batchId, qtyRemaining: { gte: q } },
+        data: { qtyRemaining: { decrement: q } },
+      });
+      if (res.count !== 1) {
+        throw new appError(
+          'The returned goods were already sold again, so this return cannot be deleted',
+          409,
+        );
+      }
+    }
+    await tx.saleReturn.delete({ where: { id } });
+  });
+}

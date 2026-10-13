@@ -24,3 +24,9 @@ export const update = catchAsync(async (req: Request, res: Response) => {
   const ret = await service.updateSaleReturn(id, input);
   res.json({ success: true, data: ret });
 });
+
+export const remove = catchAsync(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  await service.deleteSaleReturn(id);
+  res.json({ success: true, data: { id } });
+});
