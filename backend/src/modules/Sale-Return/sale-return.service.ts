@@ -3,6 +3,7 @@ import appError from '@/common/utils/appError';
 import {
   CreateSaleReturnInput,
   InvoiceLineInput,
+  UpdateSaleReturnInput,
 } from './sale-return.validation';
 import { Prisma } from '@prisma/client';
 import { cairoDay, cairoToday, resolveDocDate } from '@/common/utils/date';
@@ -193,5 +194,38 @@ export async function createSaleReturn(input: CreateSaleReturnInput) {
     },
     { timeout: 40000 },
   );
+  return getSaleReturn(id);
+}
+
+export async function updateSaleReturn(
+  id: number,
+  input: UpdateSaleReturnInput,
+) {
+  const r = await prisma.saleReturn.findUnique({
+    where: { id },
+    include: { sale: { select: { date: true } } },
+  });
+  if (!r) throw new appError('Sale return not found', 404);
+
+  const cash =
+    input.cashRefund !== undefined ? D(input.cashRefund) : r.cashRefund;
+  checkCashRefund(r.total, cash, r.customerId === null);
+
+  let date: Date | undefined;
+  if (input.date && input.date !== cairoDay(r.date)) {
+    date = resolveDocDate(input.date, cairoToday(), 'Return date');
+    if (r.sale && cairoDay(date) < cairoDay(r.sale.date)) {
+      throw new appError('Return date cannot be before the sale date', 400);
+    }
+  }
+
+  await prisma.saleReturn.update({
+    where: { id },
+    data: {
+      cashRefund: cash,
+      date,
+      note: input.note === undefined ? undefined : input.note?.trim() || null,
+    },
+  });
   return getSaleReturn(id);
 }

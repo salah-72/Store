@@ -2,8 +2,11 @@ import { Router } from 'express';
 import { protect } from '../Auth/controllers/authController';
 import { validateRequest } from '@/common/middlewares/validation';
 import { idParam } from '../Suppliers/supplier.validation';
-import { create, getSaleReturn } from './sale-return.controller';
-import { createSaleReturnSchema } from './sale-return.validation';
+import { create, getSaleReturn, update } from './sale-return.controller';
+import {
+  createSaleReturnSchema,
+  updateSaleReturnSchema,
+} from './sale-return.validation';
 
 const router = Router();
 
@@ -11,5 +14,10 @@ router.use(protect);
 
 router.post('/', validateRequest({ body: createSaleReturnSchema }), create);
 router.get('/:id', validateRequest({ params: idParam }), getSaleReturn);
+router.patch(
+  '/:id',
+  validateRequest({ params: idParam, body: updateSaleReturnSchema }),
+  update,
+);
 
 export default router;
