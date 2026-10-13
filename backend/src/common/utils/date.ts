@@ -1,3 +1,5 @@
+import appError from './appError';
+
 export const TIMEZONE = 'Africa/Cairo';
 export const EXPIRY_CUTOFF = new Date('3000-01-01T00:00:00.000Z');
 export const hasExpiry = (d: Date) => d < EXPIRY_CUTOFF;
@@ -41,3 +43,13 @@ export const cairoStartOfDay = (ymd: string) => {
   }
   return new Date(Date.UTC(y, m - 1, d, -2));
 };
+
+export function resolveDocDate(
+  day: string | undefined,
+  today: string,
+  label: string,
+  now = new Date(),
+): Date {
+  if (!day || day === today) return now;
+  return new Date(cairoStartOfDay(day).getTime() + 12 * 60 * 60 * 1000);
+}

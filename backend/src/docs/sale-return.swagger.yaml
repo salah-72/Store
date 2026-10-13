@@ -2,9 +2,40 @@ openapi: 3.0.0
 info:
   title: Agricultural Store API - Sale Returns Module
   version: 1.0.0
-  description: Sales Return and Inventory Restocking API Documentation.
+  description: Sales Return, Inventory Restocking, and Refund Accounting API Documentation.
 
 paths:
+  /sale-returns:
+    post:
+      summary: Create New Sale Return (Inventory Restocked & Refund Recorded)
+      tags:
+        - Sale Returns
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSaleReturnInput'
+      responses:
+        '201':
+          description: Sale return created successfully, stock batches replenished, and credit/refund recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SaleReturnDetailResponse'
+        '400':
+          description: Validation error, sale not found, return quantity exceeds sold quantity, or invalid cash refund amount
+        '401':
+          description: Unauthorized
+
   /sale-returns/{id}:
     get:
       summary: Get Sales Return Details
@@ -42,6 +73,62 @@ paths:
 
 components:
   schemas:
+    InvoiceLineInput:
+      type: object
+      required:
+        - saleLineId
+        - baseQty
+      properties:
+        saleLineId:
+          type: integer
+          minimum: 1
+          example: 3
+          description: ID of the original sale line being returned
+        baseQty:
+          type: integer
+          minimum: 1
+          maximum: 2000000000
+          example: 10
+          description: Quantity returned in base units
+        lineTotal:
+          type: number
+          minimum: 0
+          example: 1500.00
+          description: Refund value for this returned quantity (auto-calculated if omitted)
+
+    CreateSaleReturnInput:
+      type: object
+      required:
+        - saleId
+        - lines
+      properties:
+        saleId:
+          type: integer
+          minimum: 1
+          example: 12
+          description: Target original Sale invoice ID
+        date:
+          type: string
+          format: date
+          example: '2026-10-14'
+          description: Return date in YYYY-MM-DD format (defaults to current Cairo date if omitted)
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: 'Customer returned unused bags due to project downsizing'
+        cashRefund:
+          type: number
+          minimum: 0
+          example: 500.00
+          description: Cash refunded immediately (defaults to total for cash sales, or 0 for customer account credits)
+        lines:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/InvoiceLineInput'
+
     SaleReturnBatchResponse:
       type: object
       properties:
