@@ -1,7 +1,7 @@
 import { prisma } from '@/config/postgres';
-import { CreatePaymentInput } from './payment.validation';
+import { CreatePaymentInput, UpdatePaymentInput } from './payment.validation';
 import appError from '@/common/utils/appError';
-import { cairoToday, resolveDocDate } from '@/common/utils/date';
+import { cairoDay, cairoToday, resolveDocDate } from '@/common/utils/date';
 import { getCustomer } from '../Customers/customer.service';
 import { getSupplier } from '../Suppliers/supplier.service';
 
@@ -60,4 +60,25 @@ export async function createPayment(input: CreatePaymentInput) {
     },
   });
   return getPayment(payment.id);
+}
+
+export async function updatePayment(id: number, input: UpdatePaymentInput) {
+  const current = await prisma.payment.findUnique({
+    where: { id },
+    select: { date: true },
+  });
+  if (!current) throw new appError('Payment not found', 404);
+
+  await prisma.payment.update({
+    where: { id },
+    data: {
+      amount: input.amount,
+      note: input.note === undefined ? undefined : input.note?.trim() || null,
+      date:
+        input.date && input.date !== cairoDay(current.date)
+          ? resolveDocDate(input.date, cairoToday(), 'Payment date')
+          : undefined,
+    },
+  });
+  return getPayment(id);
 }

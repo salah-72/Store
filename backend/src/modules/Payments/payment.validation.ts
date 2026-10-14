@@ -21,4 +21,14 @@ export const createPaymentSchema = z
     },
   );
 
+export const updatePaymentSchema = z
+  .object({
+    amount: amount.optional(),
+    date: ymd.optional(),
+    note: z.string().trim().max(500).nullable().optional(),
+  })
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
+
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+export type UpdatePaymentInput = z.infer<typeof updatePaymentSchema>;
