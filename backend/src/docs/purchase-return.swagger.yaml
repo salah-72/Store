@@ -6,6 +6,76 @@ info:
 
 paths:
   /purchase-returns:
+    get:
+      summary: List purchase returns with pagination, supplier/purchase filters, and date ranges
+      tags:
+        - Purchase Returns
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Number of purchase returns per page
+        - in: query
+          name: supplierId
+          schema:
+            type: integer
+            minimum: 1
+          description: Filter returns by specific supplier ID
+        - in: query
+          name: purchaseId
+          schema:
+            type: integer
+            minimum: 1
+          description: Filter returns by specific parent purchase invoice ID
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+            example: '2026-01-01'
+          description: Start date filter (YYYY-MM-DD)
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+            example: '2026-12-31'
+          description: End date filter (YYYY-MM-DD, inclusive)
+      responses:
+        '200':
+          description: Purchase returns retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PurchaseReturnListItemResponse'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+        '400':
+          description: Invalid query parameters or date range
+        '401':
+          description: Unauthorized
+
     post:
       summary: Create New Purchase Return (Inventory Batch Stock Decremented & Supplier Credit Recorded)
       tags:
@@ -146,6 +216,41 @@ paths:
           description: Unauthorized
         '404':
           description: Purchase return not found
+
+  /purchase-returns/returnable/{purchaseId}:
+    get:
+      summary: Get returnable quantities and batch stock limits for a specific purchase invoice
+      tags:
+        - Purchase Returns
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: purchaseId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Purchase ID to check return eligibility
+      responses:
+        '200':
+          description: Returnable purchase lines retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ReturnablePurchaseResponse'
+        '400':
+          description: Invalid purchase ID parameter
+        '401':
+          description: Unauthorized
+        '404':
+          description: Purchase not found
 
 components:
   schemas:
@@ -338,3 +443,109 @@ components:
           minimum: 0
           example: 200.00
           description: Updated immediate cash refund received from supplier
+
+    PurchaseReturnListItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        purchaseId:
+          type: integer
+          example: 8
+        supplierId:
+          type: integer
+          example: 3
+        date:
+          type: string
+          format: date-time
+          example: '2026-10-14T00:00:00.000Z'
+        total:
+          type: number
+          example: 2500.00
+          description: Total financial credit or cash refund received from supplier
+        cashRefund:
+          type: number
+          example: 0.00
+          description: Cash amount refunded immediately by supplier
+        note:
+          type: string
+          nullable: true
+          example: 'Returned damaged fertilizer bags'
+        linesCount:
+          type: integer
+          example: 2
+          description: Total number of item lines in this purchase return
+        supplier:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 3
+            name:
+              type: string
+              example: 'Delta Agricultural Supplies Co.'
+
+    PageMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        totalPages:
+          type: integer
+          example: 5
+
+    ReturnablePurchaseResponse:
+      type: object
+      properties:
+        purchaseId:
+          type: integer
+          example: 8
+        supplierId:
+          type: integer
+          example: 3
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReturnablePurchaseLineResponse'
+
+    ReturnablePurchaseLineResponse:
+      type: object
+      properties:
+        purchaseLineId:
+          type: integer
+          example: 5
+          description: ID of the original purchase line
+        itemId:
+          type: integer
+          example: 1
+        itemName:
+          type: string
+          example: 'Urea Fertilizer 46%'
+        bought:
+          type: integer
+          example: 100
+          description: Total quantity originally purchased in base units
+        returnedFromBatch:
+          type: integer
+          example: 20
+          description: Quantity already returned to supplier from this batch
+        inStock:
+          type: integer
+          example: 80
+          description: Current remaining quantity in the batch warehouse
+        returnable:
+          type: integer
+          example: 80
+          description: Net quantity eligible for return (capped by available batch stock)
+        netUnitValue:
+          type: number
+          example: 125.00
+          description: Effective net unit cost after accounting for invoice-level discounts

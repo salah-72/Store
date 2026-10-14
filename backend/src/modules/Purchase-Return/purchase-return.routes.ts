@@ -7,11 +7,13 @@ import {
   getOne,
   list,
   remove,
+  returnable,
   update,
 } from './purchase-return.controller';
 import {
   createPurchaseReturnSchema,
   listPurchaseReturnsQuery,
+  purchaseIdParam,
   updatePurchaseReturnSchema,
 } from './purchase-return.validation';
 
@@ -21,6 +23,11 @@ router.use(protect);
 
 router.get('/', validateRequest({ query: listPurchaseReturnsQuery }), list);
 router.post('/', validateRequest({ body: createPurchaseReturnSchema }), create);
+router.get(
+  '/returnable/:purchaseId',
+  validateRequest({ params: purchaseIdParam }),
+  returnable,
+);
 router.get('/:id', validateRequest({ params: idParam }), getOne);
 router.patch(
   '/:id',

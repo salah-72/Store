@@ -42,6 +42,8 @@ export const listPurchaseReturnsQuery = pagination
     path: ['from'],
   });
 
+export const purchaseIdParam = z.object({ purchaseId: positiveInt });
+
 export type InvoiceLineInput = z.infer<typeof invoiceLine>;
 export type CreatePurchaseReturnInput = z.infer<
   typeof createPurchaseReturnSchema

@@ -280,3 +280,34 @@ export async function listPurchaseReturns(q: ListPurchaseReturnsQuery) {
     total,
   };
 }
+
+export async function getReturnable(purchaseId: number) {
+  const purchase = await loadPurchase(prisma, purchaseId);
+  if (!purchase) throw new appError('Purchase not found', 404);
+
+  const delivered = deliveredByBatch(purchase);
+  const returned = await returnedByBatch(prisma, purchaseId);
+  const factor = netFactor(
+    purchase.total,
+    purchase.total.add(purchase.discount),
+  );
+
+  return {
+    purchaseId: purchase.id,
+    supplierId: purchase.supplierId,
+    lines: purchase.lines.map((l) => {
+      const room =
+        (delivered.get(l.batchId) ?? 0) - (returned.get(l.batchId) ?? 0);
+      return {
+        purchaseLineId: l.id,
+        itemId: l.itemId,
+        itemName: l.item.name,
+        bought: l.baseQty,
+        returnedFromBatch: returned.get(l.batchId) ?? 0,
+        inStock: l.batch.qtyRemaining,
+        returnable: Math.max(0, Math.min(room, l.batch.qtyRemaining)),
+        netUnitValue: l.lineTotal.mul(factor).div(l.baseQty).toDecimalPlaces(6),
+      };
+    }),
+  };
+}
