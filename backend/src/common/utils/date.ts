@@ -53,3 +53,9 @@ export function resolveDocDate(
   if (!day || day === today) return now;
   return new Date(cairoStartOfDay(day).getTime() + 12 * 60 * 60 * 1000);
 }
+
+export const ADJUSTMENT_REASON = {
+  DAMAGED: 'تالف',
+  EXPIRED: 'منتهي الصلاحية',
+  OTHER: 'أخرى',
+} as const;

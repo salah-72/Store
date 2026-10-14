@@ -1,0 +1,173 @@
+openapi: 3.0.0
+info:
+  title: Agricultural Store API - Stock Adjustments Module
+  version: 1.0.0
+  description: Inventory Write-Downs, Damage/Shrinkage Adjustments, and Batch Stock Reductions API Documentation.
+
+paths:
+  /stock-adjustments:
+    post:
+      summary: Create New Stock Adjustment (Batch Inventory Decremented & Write-Down Recorded)
+      tags:
+        - Stock Adjustments
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAdjustmentInput'
+      responses:
+        '201':
+          description: Stock adjustment created successfully and batch stock decremented
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/StockAdjustmentDetailResponse'
+        '400':
+          description: Validation error, batch not found, or invalid quantity
+        '401':
+          description: Unauthorized
+        '409':
+          description: Conflict - Requested adjustment quantity exceeds remaining stock in batch
+
+  /stock-adjustments/{id}:
+    get:
+      summary: Get Stock Adjustment Details by ID
+      tags:
+        - Stock Adjustments
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Stock Adjustment ID
+      responses:
+        '200':
+          description: Stock adjustment details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/StockAdjustmentDetailResponse'
+        '400':
+          description: Invalid ID parameter
+        '401':
+          description: Unauthorized
+        '404':
+          description: Stock adjustment not found
+
+components:
+  schemas:
+    CreateAdjustmentInput:
+      type: object
+      required:
+        - batchId
+        - baseQty
+      properties:
+        batchId:
+          type: integer
+          minimum: 1
+          example: 12
+          description: Target Batch ID to adjust stock from
+        baseQty:
+          type: integer
+          minimum: 1
+          maximum: 2000000000
+          example: 5
+          description: Quantity to adjust (shrinkage/damage write-down) in base units
+        reason:
+          type: string
+          maxLength: 150
+          example: 'DAMAGED'
+          description: Reason for adjustment (defaults to DAMAGED if omitted)
+        date:
+          type: string
+          format: date
+          example: '2026-10-14'
+          description: Adjustment date in YYYY-MM-DD format (defaults to current Cairo date if omitted)
+
+    AdjustmentItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Urea Fertilizer 46%'
+        unit:
+          type: string
+          example: 'GRAM'
+
+    AdjustmentBatchResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        expiryDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2028-06-30T00:00:00.000Z'
+        unitCost:
+          type: number
+          example: 120.00
+          description: Unit cost of the batch for valuation
+
+    StockAdjustmentDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        itemId:
+          type: integer
+          example: 1
+        batchId:
+          type: integer
+          example: 12
+        baseQty:
+          type: integer
+          example: 5
+          description: Quantity adjusted in base units
+        reason:
+          type: string
+          example: 'DAMAGED'
+        date:
+          type: string
+          format: date-time
+          example: '2026-10-14T00:00:00.000Z'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-14T15:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-14T15:00:00.000Z'
+        value:
+          type: number
+          example: 600.00
+          description: Total financial write-down value (baseQty multiplied by batch unitCost)
+        item:
+          $ref: '#/components/schemas/AdjustmentItemResponse'
+        batch:
+          $ref: '#/components/schemas/AdjustmentBatchResponse'
