@@ -10,6 +10,8 @@ import { pageMeta } from '@/common/utils/schemas';
 
 export const list = catchAsync(async (req: Request, res: Response) => {
   const q = req.query as unknown as ListSalesQuery;
+  q.page = Number(q.page) || 1;
+  q.limit = Number(q.limit) || 20;
   const { sales, total } = await service.listSales(q);
   res.json({
     success: true,

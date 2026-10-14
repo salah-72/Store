@@ -30,6 +30,18 @@ export const updatePurchaseReturnSchema = z
   .strict()
   .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
 
+export const listPurchaseReturnsQuery = pagination
+  .extend({
+    supplierId: positiveInt.optional(),
+    purchaseId: positiveInt.optional(),
+    from: ymd.optional(),
+    to: ymd.optional(),
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: '"from" must not be after "to"',
+    path: ['from'],
+  });
+
 export type InvoiceLineInput = z.infer<typeof invoiceLine>;
 export type CreatePurchaseReturnInput = z.infer<
   typeof createPurchaseReturnSchema
@@ -37,3 +49,4 @@ export type CreatePurchaseReturnInput = z.infer<
 export type UpdatePurchaseReturnInput = z.infer<
   typeof updatePurchaseReturnSchema
 >;
+export type ListPurchaseReturnsQuery = z.infer<typeof listPurchaseReturnsQuery>;

@@ -3,9 +3,16 @@ import { prisma } from '@/config/postgres';
 import {
   CreatePurchaseReturnInput,
   InvoiceLineInput,
+  ListPurchaseReturnsQuery,
   UpdatePurchaseReturnInput,
 } from './purchase-return.validation';
-import { cairoDay, cairoToday, resolveDocDate } from '@/common/utils/date';
+import {
+  addDaysYMD,
+  cairoDay,
+  cairoStartOfDay,
+  cairoToday,
+  resolveDocDate,
+} from '@/common/utils/date';
 import {
   checkCashRefund,
   netFactor,
@@ -239,4 +246,37 @@ export async function deletePurchaseReturn(id: number) {
     }
     await tx.purchaseReturn.delete({ where: { id } });
   });
+}
+
+export async function listPurchaseReturns(q: ListPurchaseReturnsQuery) {
+  const where: Prisma.PurchaseReturnWhereInput = {};
+  if (q.supplierId) where.supplierId = q.supplierId;
+  if (q.purchaseId) where.purchaseId = q.purchaseId;
+  if (q.from || q.to) {
+    where.date = {
+      ...(q.from ? { gte: cairoStartOfDay(q.from) } : {}),
+      ...(q.to ? { lt: cairoStartOfDay(addDaysYMD(q.to, 1)) } : {}),
+    };
+  }
+
+  const [total, rows] = await Promise.all([
+    prisma.purchaseReturn.count({ where }),
+    prisma.purchaseReturn.findMany({
+      where,
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      skip: (q.page - 1) * q.limit,
+      take: q.limit,
+      include: {
+        supplier: { select: { id: true, name: true } },
+        _count: { select: { lines: true } },
+      },
+    }),
+  ]);
+  return {
+    returns: rows.map(({ _count, ...r }) => ({
+      ...r,
+      linesCount: _count.lines,
+    })),
+    total,
+  };
 }

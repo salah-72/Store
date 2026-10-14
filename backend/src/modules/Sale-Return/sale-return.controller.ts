@@ -35,6 +35,8 @@ export const remove = catchAsync(async (req: Request, res: Response) => {
 
 export const list = catchAsync(async (req: Request, res: Response) => {
   const q = req.query as unknown as ListSaleReturnsQuery;
+  q.page = Number(q.page) || 1;
+  q.limit = Number(q.limit) || 20;
   const { returns, total } = await service.listSaleReturns(q);
   res.json({
     success: true,
