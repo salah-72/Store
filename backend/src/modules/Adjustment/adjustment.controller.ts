@@ -8,3 +8,8 @@ export const create = catchAsync(async (req: Request, res: Response) => {
   const adjustment = await service.createAdjustment(input);
   res.status(201).json({ success: true, data: adjustment });
 });
+
+export const getOne = catchAsync(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  res.json({ success: true, data: await service.getAdjustment(id) });
+});
