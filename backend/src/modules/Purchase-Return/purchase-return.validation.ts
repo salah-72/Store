@@ -21,7 +21,19 @@ export const createPurchaseReturnSchema = z
   })
   .strict();
 
+export const updatePurchaseReturnSchema = z
+  .object({
+    date: ymd.optional(),
+    note: z.string().trim().max(500).nullable().optional(),
+    cashRefund: money.optional(),
+  })
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
+
 export type InvoiceLineInput = z.infer<typeof invoiceLine>;
 export type CreatePurchaseReturnInput = z.infer<
   typeof createPurchaseReturnSchema
+>;
+export type UpdatePurchaseReturnInput = z.infer<
+  typeof updatePurchaseReturnSchema
 >;

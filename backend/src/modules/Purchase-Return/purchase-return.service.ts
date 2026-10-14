@@ -3,8 +3,9 @@ import { prisma } from '@/config/postgres';
 import {
   CreatePurchaseReturnInput,
   InvoiceLineInput,
+  UpdatePurchaseReturnInput,
 } from './purchase-return.validation';
-import { cairoToday, resolveDocDate } from '@/common/utils/date';
+import { cairoDay, cairoToday, resolveDocDate } from '@/common/utils/date';
 import {
   checkCashRefund,
   netFactor,
@@ -188,5 +189,36 @@ export async function createPurchaseReturn(input: CreatePurchaseReturnInput) {
     { timeout: 40000 },
   );
 
+  return getPurchaseReturn(id);
+}
+
+export async function updatePurchaseReturn(
+  id: number,
+  input: UpdatePurchaseReturnInput,
+) {
+  const r = await prisma.purchaseReturn.findUnique({
+    where: { id },
+    include: { purchase: { select: { date: true } } },
+  });
+
+  if (!r) throw new appError('Purchase return not found', 404);
+
+  const cash =
+    input.cashRefund !== undefined ? D(input.cashRefund) : r.cashRefund;
+  checkCashRefund(r.total, cash, false);
+
+  let date: Date | undefined;
+  if (input.date && input.date !== cairoDay(r.date)) {
+    date = resolveDocDate(input.date, cairoToday(), 'Return date');
+  }
+
+  await prisma.purchaseReturn.update({
+    where: { id },
+    data: {
+      cashRefund: cash,
+      date,
+      note: input.note === undefined ? undefined : input.note?.trim() || null,
+    },
+  });
   return getPurchaseReturn(id);
 }
