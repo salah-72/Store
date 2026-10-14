@@ -222,3 +222,21 @@ export async function updatePurchaseReturn(
   });
   return getPurchaseReturn(id);
 }
+
+export async function deletePurchaseReturn(id: number) {
+  await prisma.$transaction(async (tx) => {
+    const r = await tx.purchaseReturn.findUnique({
+      where: { id },
+      include: { lines: true },
+    });
+    if (!r) throw new appError('Purchase return not found', 404);
+
+    for (const [batchId, q] of sumSlices(r.lines)) {
+      await tx.batch.update({
+        where: { id: batchId },
+        data: { qtyRemaining: { increment: q } },
+      });
+    }
+    await tx.purchaseReturn.delete({ where: { id } });
+  });
+}

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { protect } from '../Auth/controllers/authController';
 import { validateRequest } from '@/common/middlewares/validation';
 import { idParam } from '../Suppliers/supplier.validation';
-import { create, getOne, update } from './purchase-return.controller';
+import { create, getOne, remove, update } from './purchase-return.controller';
 import {
   createPurchaseReturnSchema,
   updatePurchaseReturnSchema,
@@ -19,4 +19,6 @@ router.patch(
   validateRequest({ params: idParam, body: updatePurchaseReturnSchema }),
   update,
 );
+router.delete('/:id', validateRequest({ params: idParam }), remove);
+
 export default router;

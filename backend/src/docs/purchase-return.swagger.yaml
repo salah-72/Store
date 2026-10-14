@@ -111,6 +111,42 @@ paths:
         '404':
           description: Purchase return not found
 
+    delete:
+      summary: Delete Purchase Return (Batch Inventory Restored)
+      tags:
+        - Purchase Returns
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Purchase Return ID
+      responses:
+        '200':
+          description: Purchase return deleted successfully and stock inventory incremented back to batches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '401':
+          description: Unauthorized
+        '404':
+          description: Purchase return not found
+
 components:
   schemas:
     InvoiceLineInput:
