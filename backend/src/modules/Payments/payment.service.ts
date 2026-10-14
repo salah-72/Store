@@ -1,9 +1,20 @@
 import { prisma } from '@/config/postgres';
-import { CreatePaymentInput, UpdatePaymentInput } from './payment.validation';
+import {
+  CreatePaymentInput,
+  ListPaymentsQuery,
+  UpdatePaymentInput,
+} from './payment.validation';
 import appError from '@/common/utils/appError';
-import { cairoDay, cairoToday, resolveDocDate } from '@/common/utils/date';
+import {
+  addDaysYMD,
+  cairoDay,
+  cairoStartOfDay,
+  cairoToday,
+  resolveDocDate,
+} from '@/common/utils/date';
 import { getCustomer } from '../Customers/customer.service';
 import { getSupplier } from '../Suppliers/supplier.service';
+import { Prisma } from '@prisma/client';
 
 const directionOf = (p: { customerId: number | null }) =>
   p.customerId !== null
@@ -81,4 +92,49 @@ export async function updatePayment(id: number, input: UpdatePaymentInput) {
     },
   });
   return getPayment(id);
+}
+
+export async function deletePayment(id: number) {
+  const r = await prisma.payment.deleteMany({ where: { id } });
+  if (r.count === 0) throw new appError('Payment not found', 404);
+}
+
+const ZERO = new Prisma.Decimal(0);
+
+export async function listPayments(q: ListPaymentsQuery) {
+  const where: Prisma.PaymentWhereInput = {};
+  if (q.customerId) where.customerId = q.customerId;
+  if (q.supplierId) where.supplierId = q.supplierId;
+  if (q.type === 'customer' && !q.customerId) where.customerId = { not: null };
+  if (q.type === 'supplier' && !q.supplierId) where.supplierId = { not: null };
+  if (q.from || q.to) {
+    where.date = {
+      ...(q.from ? { gte: cairoStartOfDay(q.from) } : {}),
+      ...(q.to ? { lt: cairoStartOfDay(addDaysYMD(q.to, 1)) } : {}), // the whole "to" day
+    };
+  }
+
+  const [total, rows, sum] = await Promise.all([
+    prisma.payment.count({ where }),
+    prisma.payment.findMany({
+      where,
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      skip: (q.page - 1) * q.limit,
+      take: q.limit,
+      include: {
+        customer: { select: { id: true, name: true } },
+        supplier: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.payment.aggregate({ where, _sum: { amount: true } }),
+  ]);
+
+  return {
+    payments: rows.map((row) => {
+      const { customer, supplier, ...p } = row;
+      return { ...p, ...directionOf(row), party: customer ?? supplier };
+    }),
+    total,
+    amount: sum._sum.amount ?? ZERO,
+  };
 }

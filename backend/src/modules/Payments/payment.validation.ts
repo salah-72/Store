@@ -30,5 +30,32 @@ export const updatePaymentSchema = z
   .strict()
   .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
 
+export const listPaymentsQuery = pagination
+  .extend({
+    customerId: positiveInt.optional(),
+    supplierId: positiveInt.optional(),
+    type: z.enum(['customer', 'supplier']).optional(),
+    from: ymd.optional(),
+    to: ymd.optional(),
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: '"from" must not be after "to"',
+    path: ['from'],
+  })
+  .refine((q) => !(q.customerId && q.supplierId), {
+    message: 'Use either customerId or supplierId, not both',
+    path: ['supplierId'],
+  })
+  .refine(
+    (q) =>
+      !(q.type === 'customer' && q.supplierId) &&
+      !(q.type === 'supplier' && q.customerId),
+    {
+      message: '"type" does not match the id you sent',
+      path: ['type'],
+    },
+  );
+
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type UpdatePaymentInput = z.infer<typeof updatePaymentSchema>;
+export type ListPaymentsQuery = z.infer<typeof listPaymentsQuery>;
