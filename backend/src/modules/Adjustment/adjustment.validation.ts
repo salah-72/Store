@@ -14,4 +14,10 @@ export const createAdjustmentSchema = z
   })
   .strict();
 
+export const updateAdjustmentSchema = z
+  .object({ reason: reason.optional(), date: ymd.optional() })
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
+
 export type CreateAdjustmentInput = z.infer<typeof createAdjustmentSchema>;
+export type UpdateAdjustmentInput = z.infer<typeof updateAdjustmentSchema>;

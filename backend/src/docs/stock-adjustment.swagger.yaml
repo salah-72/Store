@@ -73,6 +73,46 @@ paths:
         '404':
           description: Stock adjustment not found
 
+    patch:
+      summary: Update Stock Adjustment Metadata (Reason, Date)
+      tags:
+        - Stock Adjustments
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Stock Adjustment ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAdjustmentInput'
+      responses:
+        '200':
+          description: Stock adjustment updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/StockAdjustmentDetailResponse'
+        '400':
+          description: Validation error or empty update body
+        '401':
+          description: Unauthorized
+        '404':
+          description: Stock adjustment not found
+
 components:
   schemas:
     CreateAdjustmentInput:
@@ -163,3 +203,18 @@ components:
           $ref: '#/components/schemas/AdjustmentItemResponse'
         batch:
           $ref: '#/components/schemas/AdjustmentBatchResponse'
+
+    UpdateAdjustmentInput:
+      type: object
+      description: All fields are optional (partial update for stock adjustment metadata)
+      properties:
+        reason:
+          type: string
+          maxLength: 150
+          example: 'EXPIRED'
+          description: Updated reason for the stock adjustment write-down
+        date:
+          type: string
+          format: date
+          example: '2026-10-15'
+          description: Adjustment date in YYYY-MM-DD format

@@ -1,5 +1,8 @@
-import { cairoToday, resolveDocDate } from '@/common/utils/date';
-import { CreateAdjustmentInput } from './adjustment.validation';
+import { cairoDay, cairoToday, resolveDocDate } from '@/common/utils/date';
+import {
+  CreateAdjustmentInput,
+  UpdateAdjustmentInput,
+} from './adjustment.validation';
 import { prisma } from '@/config/postgres';
 import { Prisma } from '@prisma/client';
 import appError from '@/common/utils/appError';
@@ -66,4 +69,27 @@ export async function getAdjustment(id: number) {
   });
   if (!r) throw new appError('Stock adjustment not found', 404);
   return { ...r, value: adjustmentValue(r.baseQty, r.batch.unitCost) };
+}
+
+export async function updateAdjustment(
+  id: number,
+  input: UpdateAdjustmentInput,
+) {
+  const current = await prisma.stockAdjustment.findUnique({
+    where: { id },
+    select: { date: true },
+  });
+  if (!current) throw new appError('Stock adjustment not found', 404);
+
+  await prisma.stockAdjustment.update({
+    where: { id },
+    data: {
+      reason: input.reason,
+      date:
+        input.date && input.date !== cairoDay(current.date)
+          ? resolveDocDate(input.date, cairoToday(), 'Adjustment date')
+          : undefined,
+    },
+  });
+  return getAdjustment(id);
 }
