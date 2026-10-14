@@ -2,9 +2,11 @@ import catchAsync from '@/common/utils/catchAsync';
 import { Request, Response } from 'express';
 import {
   CreateAdjustmentInput,
+  ListAdjustmentsQuery,
   UpdateAdjustmentInput,
 } from './adjustment.validation';
 import * as service from './adjustment.service';
+import { pageMeta } from '@/common/utils/schemas';
 
 export const create = catchAsync(async (req: Request, res: Response) => {
   const input = req.body as CreateAdjustmentInput;
@@ -28,4 +30,17 @@ export const remove = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   await service.deleteAdjustment(id);
   res.json({ success: true, data: { id } });
+});
+
+export const list = catchAsync(async (req: Request, res: Response) => {
+  const q = req.query as unknown as ListAdjustmentsQuery;
+  q.page = Number(q.page) || 1;
+  q.limit = Number(q.limit) || 20;
+  const { adjustments, total, value } = await service.listAdjustments(q);
+  res.json({
+    success: true,
+    data: adjustments,
+    meta: pageMeta(total, q.page, q.limit),
+    summary: { value },
+  });
 });

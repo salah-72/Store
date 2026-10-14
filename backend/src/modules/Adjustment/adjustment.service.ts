@@ -1,6 +1,13 @@
-import { cairoDay, cairoToday, resolveDocDate } from '@/common/utils/date';
+import {
+  addDaysYMD,
+  cairoDay,
+  cairoStartOfDay,
+  cairoToday,
+  resolveDocDate,
+} from '@/common/utils/date';
 import {
   CreateAdjustmentInput,
+  ListAdjustmentsQuery,
   UpdateAdjustmentInput,
 } from './adjustment.validation';
 import { prisma } from '@/config/postgres';
@@ -105,4 +112,45 @@ export async function deleteAdjustment(id: number) {
     });
     await tx.stockAdjustment.delete({ where: { id } });
   });
+}
+
+export async function listAdjustments(q: ListAdjustmentsQuery) {
+  const where: Prisma.StockAdjustmentWhereInput = {};
+  if (q.itemId) where.itemId = q.itemId;
+  if (q.batchId) where.batchId = q.batchId;
+  if (q.reason) where.itemId = q.itemId;
+  if (q.from || q.to) {
+    where.date = {
+      ...(q.from ? { gte: cairoStartOfDay(q.from) } : {}),
+      ...(q.to ? { lt: cairoStartOfDay(addDaysYMD(q.to, 1)) } : {}), // the whole "to" day
+    };
+  }
+
+  const [total, rows, all] = await Promise.all([
+    prisma.stockAdjustment.count({ where }),
+    prisma.stockAdjustment.findMany({
+      where,
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      skip: (q.page - 1) * q.limit,
+      take: q.limit,
+      include: detail,
+    }),
+    prisma.stockAdjustment.findMany({
+      where,
+      select: { baseQty: true, batch: { select: { unitCost: true } } },
+    }),
+  ]);
+
+  const value = all.reduce(
+    (s, r) => s.add(adjustmentValue(r.baseQty, r.batch.unitCost)),
+    ZERO,
+  );
+  return {
+    adjustments: rows.map((r) => ({
+      ...r,
+      value: adjustmentValue(r.baseQty, r.batch.unitCost),
+    })),
+    total,
+    value,
+  };
 }

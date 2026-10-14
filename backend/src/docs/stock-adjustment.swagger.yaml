@@ -6,6 +6,90 @@ info:
 
 paths:
   /stock-adjustments:
+    get:
+      summary: List stock adjustments with pagination, item/batch filters, reasons, and date ranges
+      tags:
+        - Stock Adjustments
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Number of stock adjustments per page
+        - in: query
+          name: itemId
+          schema:
+            type: integer
+            minimum: 1
+          description: Filter adjustments by specific item ID
+        - in: query
+          name: batchId
+          schema:
+            type: integer
+            minimum: 1
+          description: Filter adjustments by specific batch ID
+        - in: query
+          name: reason
+          schema:
+            type: string
+            maxLength: 100
+            example: 'DAMAGED'
+          description: Filter by adjustment reason
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+            example: '2026-01-01'
+          description: Start date filter (YYYY-MM-DD)
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+            example: '2026-12-31'
+          description: End date filter (YYYY-MM-DD, inclusive)
+      responses:
+        '200':
+          description: Stock adjustments retrieved successfully with summary valuation totals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StockAdjustmentListItemResponse'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+                  summary:
+                    type: object
+                    properties:
+                      value:
+                        type: number
+                        example: 3400.00
+                        description: Total financial write-down value across all matching adjustment records
+        '400':
+          description: Invalid query parameters or date range
+        '401':
+          description: Unauthorized
+
     post:
       summary: Create New Stock Adjustment (Batch Inventory Decremented & Write-Down Recorded)
       tags:
@@ -254,3 +338,51 @@ components:
           format: date
           example: '2026-10-15'
           description: Adjustment date in YYYY-MM-DD format
+
+    StockAdjustmentListItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        itemId:
+          type: integer
+          example: 1
+        batchId:
+          type: integer
+          example: 12
+        baseQty:
+          type: integer
+          example: 5
+          description: Quantity adjusted in base units
+        reason:
+          type: string
+          example: 'DAMAGED'
+        date:
+          type: string
+          format: date-time
+          example: '2026-10-14T00:00:00.000Z'
+        value:
+          type: number
+          example: 600.00
+          description: Total financial write-down value for this adjustment row
+        item:
+          $ref: '#/components/schemas/AdjustmentItemResponse'
+        batch:
+          $ref: '#/components/schemas/AdjustmentBatchResponse'
+
+    PageMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        totalPages:
+          type: integer
+          example: 5

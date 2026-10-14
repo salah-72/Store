@@ -3,15 +3,17 @@ import { protect } from '../Auth/controllers/authController';
 import { validateRequest } from '@/common/middlewares/validation';
 import {
   createAdjustmentSchema,
+  listAdjustmentsQuery,
   updateAdjustmentSchema,
 } from './adjustment.validation';
-import { create, getOne, remove, update } from './adjustment.controller';
+import { create, getOne, list, remove, update } from './adjustment.controller';
 import { idParam } from '../Suppliers/supplier.validation';
 
 const router = Router();
 
 router.use(protect);
 
+router.get('/', validateRequest({ query: listAdjustmentsQuery }), list);
 router.post('/', validateRequest({ body: createAdjustmentSchema }), create);
 router.get('/:id', validateRequest({ params: idParam }), getOne);
 router.patch(
