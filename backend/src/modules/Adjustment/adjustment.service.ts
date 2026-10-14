@@ -93,3 +93,16 @@ export async function updateAdjustment(
   });
   return getAdjustment(id);
 }
+
+export async function deleteAdjustment(id: number) {
+  await prisma.$transaction(async (tx) => {
+    const adj = await tx.stockAdjustment.findUnique({ where: { id } });
+    if (!adj) throw new appError('Stock adjustment not found', 404);
+
+    await tx.batch.update({
+      where: { id: adj.batchId },
+      data: { qtyRemaining: { increment: adj.baseQty } },
+    });
+    await tx.stockAdjustment.delete({ where: { id } });
+  });
+}

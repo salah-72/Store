@@ -5,7 +5,7 @@ import {
   createAdjustmentSchema,
   updateAdjustmentSchema,
 } from './adjustment.validation';
-import { create, getOne, update } from './adjustment.controller';
+import { create, getOne, remove, update } from './adjustment.controller';
 import { idParam } from '../Suppliers/supplier.validation';
 
 const router = Router();
@@ -19,4 +19,5 @@ router.patch(
   validateRequest({ params: idParam, body: updateAdjustmentSchema }),
   update,
 );
+router.delete('/:id', validateRequest({ params: idParam }), remove);
 export default router;
