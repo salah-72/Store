@@ -1,0 +1,183 @@
+openapi: 3.0.0
+info:
+  title: Agricultural Store API - Financial Analytics & Dashboard Overview
+  version: 1.0.0
+  description: Comprehensive Financial Reporting, COGS, Gross/Net Profit, and Cash Flow Analytics API Documentation.
+
+paths:
+  /overview:
+    get:
+      summary: Get Comprehensive Financial Overview and Dashboard Metrics for a Date Range
+      tags:
+        - Financial Analytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+            example: '2026-10-01'
+          description: Start date filter (YYYY-MM-DD). Defaults to the 1st of the current month if omitted.
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+            example: '2026-10-15'
+          description: End date filter (YYYY-MM-DD, inclusive). Defaults to current Cairo date if omitted.
+      responses:
+        '200':
+          description: Financial overview data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OverviewResponse'
+        '400':
+          description: Invalid date parameters or date range
+        '401':
+          description: Unauthorized
+
+components:
+  schemas:
+    OverviewResponse:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            from:
+              type: string
+              example: '2026-10-01'
+            to:
+              type: string
+              example: '2026-10-15'
+        sales:
+          type: object
+          properties:
+            count:
+              type: integer
+              example: 42
+            subtotal:
+              type: number
+              example: 125000.00
+            discount:
+              type: number
+              example: 5000.00
+            total:
+              type: number
+              example: 120000.00
+            returns:
+              type: number
+              example: 4000.00
+            net:
+              type: number
+              example: 116000.00
+        cost:
+          type: object
+          properties:
+            sold:
+              type: number
+              example: 85000.00
+            returned:
+              type: number
+              example: 2800.00
+            net:
+              type: number
+              example: 82200.00
+        grossProfit:
+          type: number
+          example: 33800.00
+        expenses:
+          type: object
+          properties:
+            total:
+              type: number
+              example: 12400.00
+            byCategory:
+              type: array
+              items:
+                type: object
+                properties:
+                  category:
+                    type: string
+                    example: 'Utilities'
+                  amount:
+                    type: number
+                    example: 4500.00
+                  count:
+                    type: integer
+                    example: 3
+        purchaseDiscounts:
+          type: number
+          example: 3200.00
+        writeOffs:
+          type: number
+          example: 1500.00
+        netProfit:
+          type: number
+          example: 23100.00
+        purchases:
+          type: object
+          properties:
+            count:
+              type: integer
+              example: 15
+            subtotal:
+              type: number
+              example: 95000.00
+            discount:
+              type: number
+              example: 3200.00
+            total:
+              type: number
+              example: 91800.00
+            returns:
+              type: number
+              example: 5000.00
+            net:
+              type: number
+              example: 86800.00
+        cashFlow:
+          type: object
+          properties:
+            in:
+              type: number
+              example: 110000.00
+            out:
+              type: number
+              example: 95000.00
+            net:
+              type: number
+              example: 15000.00
+            parts:
+              type: object
+              properties:
+                paidOnSales:
+                  type: number
+                  example: 80000.00
+                customerPayments:
+                  type: number
+                  example: 28000.00
+                supplierRefunds:
+                  type: number
+                  example: 2000.00
+                paidOnPurchases:
+                  type: number
+                  example: 70000.00
+                supplierPayments:
+                  type: number
+                  example: 12600.00
+                customerRefunds:
+                  type: number
+                  example: 0.00
+                expenses:
+                  type: number
+                  example: 12400.00

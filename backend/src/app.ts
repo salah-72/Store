@@ -56,6 +56,9 @@ const adjustmentSwagger = YAML.load(
 const expenseSwagger = YAML.load(
   path.join(process.cwd(), 'src/docs/expense.swagger.yaml'),
 );
+const statsSwagger = YAML.load(
+  path.join(process.cwd(), 'src/docs/stats.swagger.yaml'),
+);
 
 const swaggerDocument = {
   ...authSwagger,
@@ -71,6 +74,7 @@ const swaggerDocument = {
     ...paymentSwagger.paths,
     ...adjustmentSwagger.paths,
     ...expenseSwagger.paths,
+    ...statsSwagger.paths,
   },
   components: {
     ...authSwagger.components,
@@ -84,6 +88,7 @@ const swaggerDocument = {
     ...paymentSwagger.components,
     ...adjustmentSwagger.components,
     ...expenseSwagger.components,
+    ...statsSwagger.components,
     schemas: {
       ...authSwagger.components?.schemas,
       ...itemSwagger.components?.schemas,
@@ -96,6 +101,7 @@ const swaggerDocument = {
       ...paymentSwagger.components?.schemas,
       ...adjustmentSwagger.components?.schemas,
       ...expenseSwagger.components?.schemas,
+      ...statsSwagger.components?.schemas,
     },
   },
 };
