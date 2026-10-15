@@ -36,6 +36,41 @@ paths:
         '401':
           description: Unauthorized
 
+  /expenses/{id}:
+    get:
+      summary: Get Expense Details by ID
+      tags:
+        - Expenses
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Target Expense ID
+      responses:
+        '200':
+          description: Expense details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ExpenseResponse'
+        '400':
+          description: Invalid ID parameter
+        '401':
+          description: Unauthorized
+        '404':
+          description: Expense not found
+
 components:
   schemas:
     CreateExpenseInput:
