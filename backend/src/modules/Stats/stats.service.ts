@@ -1,12 +1,20 @@
-import { addDaysYMD, cairoStartOfDay, cairoToday } from '@/common/utils/date';
+import {
+  addDaysYMD,
+  cairoDay,
+  cairoStartOfDay,
+  cairoToday,
+} from '@/common/utils/date';
 import {
   assembleOverview,
+  bucketByDay,
   costOf,
+  daysBetween,
   monthStart,
   OverviewData,
 } from './stats.helpers';
 import { prisma } from '@/config/postgres';
 import { Prisma } from '@prisma/client';
+import { SalesByDayQuery } from './stats.validation';
 
 const ZERO = new Prisma.Decimal(0);
 const sum = (v: Prisma.Decimal | null | undefined) => v ?? ZERO;
@@ -157,5 +165,44 @@ export async function getOverview(from?: string, to?: string) {
   return {
     period: { from: start, to: end },
     ...assembleOverview(await fetchOverviewData(start, end)),
+  };
+}
+
+async function salesPerDay(days: string[]) {
+  const date = {
+    gte: cairoStartOfDay(days[0]),
+    lt: cairoStartOfDay(addDaysYMD(days[days.length - 1], 1)),
+  };
+  const [sales, returns] = await Promise.all([
+    prisma.sale.findMany({
+      where: { date },
+      select: { date: true, total: true },
+    }),
+    prisma.saleReturn.findMany({
+      where: { date },
+      select: { date: true, total: true },
+    }),
+  ]);
+  return bucketByDay(days, sales, returns, cairoDay);
+}
+
+export async function getSalesByDay(q: SalesByDayQuery) {
+  const today = cairoToday();
+  const to = q.to ?? today;
+  const from = q.from ?? addDaysYMD(to, -29);
+  const days = await salesPerDay(daysBetween(from, to));
+
+  const total = days.reduce((s, d) => s.add(d.sales), ZERO);
+  const returns = days.reduce((s, d) => s.add(d.returns), ZERO);
+
+  return {
+    period: { from, to },
+    days,
+    summary: {
+      count: days.reduce((n, d) => n + d.count, 0),
+      sales: total,
+      returns,
+      net: total.sub(returns),
+    },
   };
 }

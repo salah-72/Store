@@ -1,3 +1,4 @@
+import { addDaysYMD } from '@/common/utils/date';
 import { Prisma } from '@prisma/client';
 
 export const monthStart = (today: string) => `${today.slice(0, 8)}01`;
@@ -81,4 +82,36 @@ export function assembleOverview(d: OverviewData) {
       },
     },
   };
+}
+
+export function daysBetween(from: string, to: string) {
+  const out: string[] = [];
+  for (let d = from; d <= to; d = addDaysYMD(d, 1)) out.push(d);
+  return out;
+}
+
+export function bucketByDay(
+  days: string[],
+  sales: { date: Date; total: Dec }[],
+  returns: { date: Date; total: Dec }[],
+  dayOf: (d: Date) => string,
+) {
+  const m = new Map(
+    days.map((day) => [day, { day, count: 0, sales: ZERO, returns: ZERO }]),
+  );
+  for (const s of sales) {
+    const b = m.get(dayOf(s.date));
+    if (b) {
+      b.count += 1;
+      b.sales = b.sales.add(s.total);
+    }
+  }
+  for (const r of returns) {
+    const b = m.get(dayOf(r.date));
+    if (b) b.returns = b.returns.add(r.total);
+  }
+  return days.map((day) => {
+    const b = m.get(day)!;
+    return { ...b, net: b.sales.sub(b.returns) };
+  });
 }
