@@ -13,6 +13,7 @@ import saleReturnRouter from './modules/Sale-Return/sale-return.routes';
 import purchaseReturnRouter from './modules/Purchase-Return/purchase-return.routes';
 import paymentRouter from './modules/Payments/payment.routes';
 import adjustmentRouter from './modules/Adjustment/adjustment.routes';
+import expenseRouter from './modules/Expenses/expense.routes';
 import errorHandler from './common/middlewares/errorHandler';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
@@ -51,6 +52,9 @@ const paymentSwagger = YAML.load(
 const adjustmentSwagger = YAML.load(
   path.join(process.cwd(), 'src/docs/stock-adjustment.swagger.yaml'),
 );
+const expenseSwagger = YAML.load(
+  path.join(process.cwd(), 'src/docs/expense.swagger.yaml'),
+);
 
 const swaggerDocument = {
   ...authSwagger,
@@ -65,6 +69,7 @@ const swaggerDocument = {
     ...purchaseReturnSwagger.paths,
     ...paymentSwagger.paths,
     ...adjustmentSwagger.paths,
+    ...expenseSwagger.paths,
   },
   components: {
     ...authSwagger.components,
@@ -77,6 +82,7 @@ const swaggerDocument = {
     ...purchaseReturnSwagger.components,
     ...paymentSwagger.components,
     ...adjustmentSwagger.components,
+    ...expenseSwagger.components,
     schemas: {
       ...authSwagger.components?.schemas,
       ...itemSwagger.components?.schemas,
@@ -88,6 +94,7 @@ const swaggerDocument = {
       ...purchaseReturnSwagger.components?.schemas,
       ...paymentSwagger.components?.schemas,
       ...adjustmentSwagger.components?.schemas,
+      ...expenseSwagger.components?.schemas,
     },
   },
 };
@@ -130,6 +137,7 @@ app.use('/sale-returns', saleReturnRouter);
 app.use('/purchase-returns', purchaseReturnRouter);
 app.use('/payments', paymentRouter);
 app.use('/stock-adjustments', adjustmentRouter);
+app.use('/expenses', expenseRouter);
 
 app.use(errorHandler);
 

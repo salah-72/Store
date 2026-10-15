@@ -1,0 +1,87 @@
+openapi: 3.0.0
+info:
+  title: Agricultural Store API - Expenses Module
+  version: 1.0.0
+  description: Operational Expenses Tracking and Financial Outflow API Documentation.
+
+paths:
+  /expenses:
+    post:
+      summary: Record New Operational Expense
+      tags:
+        - Expenses
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExpenseInput'
+      responses:
+        '201':
+          description: Expense recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ExpenseResponse'
+        '400':
+          description: Validation error, missing category, or invalid amount
+        '401':
+          description: Unauthorized
+
+components:
+  schemas:
+    CreateExpenseInput:
+      type: object
+      required:
+        - category
+        - amount
+      properties:
+        category:
+          type: string
+          maxLength: 50
+          example: 'Utilities'
+          description: Expense category (e.g., Utilities, Rent, Salaries, Transport)
+        amount:
+          type: number
+          minimum: 0.01
+          example: 1200.50
+          description: Expense amount (must be greater than zero)
+        date:
+          type: string
+          format: date
+          example: '2026-10-15'
+          description: Expense date in YYYY-MM-DD format (defaults to current Cairo date if omitted)
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: 'Electricity bill for warehouse and office storage'
+
+    ExpenseResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        category:
+          type: string
+          example: 'Utilities'
+        amount:
+          type: number
+          example: 1200.50
+        date:
+          type: string
+          format: date-time
+          example: '2026-10-15T00:00:00.000Z'
+        note:
+          type: string
+          nullable: true
+          example: 'Electricity bill for warehouse and office storage'
