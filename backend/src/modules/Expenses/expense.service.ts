@@ -37,3 +37,8 @@ export async function updateExpense(id: number, input: UpdateExpenseInput) {
     },
   });
 }
+
+export async function deleteExpense(id: number) {
+  const r = await prisma.expense.deleteMany({ where: { id } });
+  if (r.count === 0) throw new appError('Expense not found', 404);
+}

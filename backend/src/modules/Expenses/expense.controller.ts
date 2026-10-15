@@ -20,3 +20,9 @@ export const update = catchAsync(async (req: Request, res: Response) => {
   const expense = await service.updateExpense(id, input);
   res.json({ success: true, data: expense });
 });
+
+export const remove = catchAsync(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  await service.deleteExpense(id);
+  res.json({ success: true, data: { id } });
+});
