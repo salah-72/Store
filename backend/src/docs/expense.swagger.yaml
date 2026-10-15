@@ -6,6 +6,75 @@ info:
 
 paths:
   /expenses:
+    get:
+      summary: List expenses with pagination, case-insensitive search, date ranges, and sum totals
+      tags:
+        - Expenses
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Number of expense records per page
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 100
+            example: 'Utilities'
+          description: Search query matching category or notes (case-insensitive)
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+            example: '2026-01-01'
+          description: Start date filter (YYYY-MM-DD)
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+            example: '2026-12-31'
+          description: End date filter (YYYY-MM-DD, inclusive)
+      responses:
+        '200':
+          description: Expenses retrieved successfully with summary totals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExpenseListItemResponse'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+                  amount:
+                    type: number
+                    example: 12500.00
+                    description: Total sum of expense amounts matching the filter criteria
+        '400':
+          description: Invalid query parameters or date range
+        '401':
+          description: Unauthorized
+
     post:
       summary: Record New Operational Expense
       tags:
@@ -221,3 +290,40 @@ components:
           maxLength: 500
           nullable: true
           example: 'Updated notes regarding generator repair service'
+
+    ExpenseListItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        category:
+          type: string
+          example: 'Utilities'
+        amount:
+          type: number
+          example: 1200.50
+        date:
+          type: string
+          format: date-time
+          example: '2026-10-15T00:00:00.000Z'
+        note:
+          type: string
+          nullable: true
+          example: 'Electricity bill for warehouse and office storage'
+
+    PageMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        totalPages:
+          type: integer
+          example: 5

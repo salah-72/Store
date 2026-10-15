@@ -1,7 +1,12 @@
 import catchAsync from '@/common/utils/catchAsync';
 import { Request, Response } from 'express';
-import { CreateExpenseInput, UpdateExpenseInput } from './expense.validation';
+import {
+  CreateExpenseInput,
+  ListExpensesQuery,
+  UpdateExpenseInput,
+} from './expense.validation';
 import * as service from './expense.service';
+import { pageMeta } from '@/common/utils/schemas';
 
 export const create = catchAsync(async (req: Request, res: Response) => {
   const input = req.body as CreateExpenseInput;
@@ -25,4 +30,17 @@ export const remove = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   await service.deleteExpense(id);
   res.json({ success: true, data: { id } });
+});
+
+export const list = catchAsync(async (req: Request, res: Response) => {
+  const q = req.query as unknown as ListExpensesQuery;
+  q.page = Number(q.page) || 1;
+  q.limit = Number(q.limit) || 20;
+  const { expenses, total, amount } = await service.listExpenses(q);
+  res.json({
+    success: true,
+    data: expenses,
+    meta: pageMeta(total, q.page, q.limit),
+    amount,
+  });
 });

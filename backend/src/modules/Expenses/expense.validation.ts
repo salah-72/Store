@@ -22,5 +22,12 @@ export const updateExpenseSchema = z
   .strict()
   .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
 
+export const listExpensesQuery = pagination.extend({
+  search: z.string().trim().max(100).optional(),
+  from: ymd.optional(),
+  to: ymd.optional(),
+});
+
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
+export type ListExpensesQuery = z.infer<typeof listExpensesQuery>;
