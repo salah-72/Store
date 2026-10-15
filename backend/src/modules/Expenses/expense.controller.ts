@@ -36,11 +36,15 @@ export const list = catchAsync(async (req: Request, res: Response) => {
   const q = req.query as unknown as ListExpensesQuery;
   q.page = Number(q.page) || 1;
   q.limit = Number(q.limit) || 20;
-  const { expenses, total, amount } = await service.listExpenses(q);
+  const { expenses, total, amount, byCategory } = await service.listExpenses(q);
   res.json({
     success: true,
     data: expenses,
     meta: pageMeta(total, q.page, q.limit),
-    amount,
+    summary: { amount, byCategory },
   });
+});
+
+export const categories = catchAsync(async (req: Request, res: Response) => {
+  res.json({ success: true, data: await service.listCategories() });
 });

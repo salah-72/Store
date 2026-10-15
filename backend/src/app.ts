@@ -14,6 +14,7 @@ import purchaseReturnRouter from './modules/Purchase-Return/purchase-return.rout
 import paymentRouter from './modules/Payments/payment.routes';
 import adjustmentRouter from './modules/Adjustment/adjustment.routes';
 import expenseRouter from './modules/Expenses/expense.routes';
+import statsRouter from './modules/Stats/stats.routes';
 import errorHandler from './common/middlewares/errorHandler';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
@@ -138,6 +139,7 @@ app.use('/purchase-returns', purchaseReturnRouter);
 app.use('/payments', paymentRouter);
 app.use('/stock-adjustments', adjustmentRouter);
 app.use('/expenses', expenseRouter);
+app.use('/stats', statsRouter);
 
 app.use(errorHandler);
 

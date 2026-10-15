@@ -6,7 +6,14 @@ import {
   listExpensesQuery,
   updateExpenseSchema,
 } from './expense.validation';
-import { create, getOne, list, remove, update } from './expense.controller';
+import {
+  categories,
+  create,
+  getOne,
+  list,
+  remove,
+  update,
+} from './expense.controller';
 import { idParam } from '../Suppliers/supplier.validation';
 
 const router = Router();
@@ -14,6 +21,7 @@ const router = Router();
 router.use(protect);
 
 router.get('/', validateRequest({ query: listExpensesQuery }), list);
+router.get('/categories', categories);
 router.post('/', validateRequest({ body: createExpenseSchema }), create);
 router.get('/:id', validateRequest({ params: idParam }), getOne);
 router.patch(

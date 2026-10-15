@@ -13,11 +13,30 @@ import {
 } from '@/common/utils/date';
 import appError from '@/common/utils/appError';
 import { Prisma } from '@prisma/client';
+import { canonicalCategory } from './expense.helpers';
+
+async function existingCategories() {
+  const rows = await prisma.expense.findMany({
+    distinct: ['category'],
+    select: { category: true },
+  });
+  return rows.map((r) => r.category);
+}
+
+const dayRange = (from?: string, to?: string): Prisma.ExpenseWhereInput =>
+  from || to
+    ? {
+        date: {
+          ...(from ? { gte: cairoStartOfDay(from) } : {}),
+          ...(to ? { lt: cairoStartOfDay(addDaysYMD(to, 1)) } : {}), // the whole "to" day
+        },
+      }
+    : {};
 
 export async function createExpense(input: CreateExpenseInput) {
   return prisma.expense.create({
     data: {
-      category: input.category,
+      category: canonicalCategory(input.category, await existingCategories()),
       amount: input.amount,
       date: resolveDocDate(input.date, cairoToday(), 'Expense date'),
       note: input.note?.trim() || null,
@@ -33,12 +52,14 @@ export async function getExpense(id: number) {
 
 export async function updateExpense(id: number, input: UpdateExpenseInput) {
   const current = await getExpense(id);
-  if (!current) throw new appError('Expense not found', 404);
 
   return prisma.expense.update({
     where: { id },
     data: {
-      category: input.category,
+      category:
+        input.category === undefined
+          ? undefined
+          : canonicalCategory(input.category, await existingCategories()),
       amount: input.amount,
       note: input.note === undefined ? undefined : input.note?.trim() || null,
       date:
@@ -57,21 +78,14 @@ export async function deleteExpense(id: number) {
 const ZERO = new Prisma.Decimal(0);
 
 export async function listExpenses(q: ListExpensesQuery) {
-  const where: Prisma.ExpenseWhereInput = {};
-  if (q.search) {
-    where.OR = [
-      { category: { contains: q.search, mode: 'insensitive' } },
-      { note: { contains: q.search, mode: 'insensitive' } },
-    ];
-  }
-  if (q.from || q.to) {
-    where.date = {
-      ...(q.from ? { gte: cairoStartOfDay(q.from) } : {}),
-      ...(q.to ? { lt: cairoStartOfDay(addDaysYMD(q.to, 1)) } : {}), // the whole "to" day
-    };
-  }
+  const range = dayRange(q.from, q.to);
 
-  const [total, rows, sum] = await Promise.all([
+  const where: Prisma.ExpenseWhereInput = { ...range };
+  if (q.category)
+    where.category = canonicalCategory(q.category, await existingCategories());
+  if (q.search) where.note = { contains: q.search, mode: 'insensitive' };
+
+  const [total, rows, sum, byCategory] = await Promise.all([
     prisma.expense.count({ where }),
     prisma.expense.findMany({
       where,
@@ -79,12 +93,40 @@ export async function listExpenses(q: ListExpensesQuery) {
       skip: (q.page - 1) * q.limit,
       take: q.limit,
     }),
-    prisma.expense.aggregate({ where, _sum: { amount: true } }),
+    prisma.expense.aggregate({ where, _sum: { amount: true } }), // all the matching expenses, not just this page
+    prisma.expense.groupBy({
+      by: ['category'],
+      where: range,
+      _sum: { amount: true },
+      _count: { _all: true },
+      orderBy: { _sum: { amount: 'desc' } },
+    }),
   ]);
 
   return {
     expenses: rows,
     total,
     amount: sum._sum.amount ?? ZERO,
+    byCategory: byCategory.map((r) => ({
+      category: r.category,
+      amount: r._sum.amount ?? ZERO,
+      count: r._count._all,
+    })),
   };
+}
+
+export async function listCategories() {
+  const rows = await prisma.expense.groupBy({
+    by: ['category'],
+    _count: { _all: true },
+    _sum: { amount: true },
+    _max: { date: true },
+    orderBy: { _count: { category: 'desc' } },
+  });
+  return rows.map((r) => ({
+    category: r.category,
+    count: r._count._all,
+    amount: r._sum.amount ?? ZERO,
+    lastUsed: r._max.date,
+  }));
 }

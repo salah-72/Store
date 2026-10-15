@@ -7,7 +7,7 @@ info:
 paths:
   /expenses:
     get:
-      summary: List expenses with pagination, case-insensitive search, date ranges, and sum totals
+      summary: List expenses with pagination, category filtering, search, date ranges, and analytics summaries
       tags:
         - Expenses
       security:
@@ -29,12 +29,19 @@ paths:
             maximum: 100
           description: Number of expense records per page
         - in: query
+          name: category
+          schema:
+            type: string
+            maxLength: 50
+            example: 'Utilities'
+          description: Filter expenses by canonical category name
+        - in: query
           name: search
           schema:
             type: string
             maxLength: 100
-            example: 'Utilities'
-          description: Search query matching category or notes (case-insensitive)
+            example: 'Electricity'
+          description: Search query matching note content (case-insensitive)
         - in: query
           name: from
           schema:
@@ -51,7 +58,7 @@ paths:
           description: End date filter (YYYY-MM-DD, inclusive)
       responses:
         '200':
-          description: Expenses retrieved successfully with summary totals
+          description: Expenses retrieved successfully with category breakdown and totals
           content:
             application/json:
               schema:
@@ -69,11 +76,11 @@ paths:
                   amount:
                     type: number
                     example: 12500.00
-                    description: Total sum of expense amounts matching the filter criteria
-        '400':
-          description: Invalid query parameters or date range
-        '401':
-          description: Unauthorized
+                    description: Total sum of expense amounts matching filter criteria
+                  byCategory:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExpenseCategorySummaryResponse'
 
     post:
       summary: Record New Operational Expense
@@ -215,6 +222,30 @@ paths:
           description: Unauthorized
         '404':
           description: Expense not found
+  /expense/categories:
+    get:
+      summary: List all unique expense categories with aggregated counts, total amounts, and last-used dates
+      tags:
+        - Expenses
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Expense categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExpenseCategoryDetailResponse'
+        '401':
+          description: Unauthorized
 
 components:
   schemas:
@@ -327,3 +358,37 @@ components:
         totalPages:
           type: integer
           example: 5
+
+    ExpenseCategoryDetailResponse:
+      type: object
+      properties:
+        category:
+          type: string
+          example: 'Utilities'
+        count:
+          type: integer
+          example: 12
+          description: Total number of expense records under this category
+        amount:
+          type: number
+          example: 18500.00
+          description: Total financial sum of expenses under this category
+        lastUsed:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-10-15T00:00:00.000Z'
+          description: Date of the most recent expense recorded in this category
+
+    ExpenseCategorySummaryResponse:
+      type: object
+      properties:
+        category:
+          type: string
+          example: 'Utilities'
+        amount:
+          type: number
+          example: 4500.00
+        count:
+          type: integer
+          example: 3
