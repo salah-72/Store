@@ -12,4 +12,15 @@ export const createExpenseSchema = z.object({
   note: z.string().trim().max(500).nullable().optional(),
 });
 
+export const updateExpenseSchema = z
+  .object({
+    category: category.optional(),
+    amount: amount.optional(),
+    date: ymd.optional(),
+    note: z.string().trim().max(500).nullable().optional(),
+  })
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, { message: 'Nothing to update' });
+
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
+export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
