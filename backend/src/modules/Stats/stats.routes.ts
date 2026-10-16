@@ -4,9 +4,10 @@ import { validateRequest } from '@/common/middlewares/validation';
 import {
   overviewQuery,
   salesByDayQuery,
+  staleStockQuery,
   topItemsQuery,
 } from './stats.validation';
-import { overview, salesByDay, topItems } from './stats.controller';
+import { overview, salesByDay, staleStock, topItems } from './stats.controller';
 
 const router = Router();
 
@@ -19,5 +20,10 @@ router.get(
   salesByDay,
 );
 router.get('/top-items', validateRequest({ query: topItemsQuery }), topItems);
+router.get(
+  '/stale-stock',
+  validateRequest({ query: staleStockQuery }),
+  staleStock,
+);
 
 export default router;

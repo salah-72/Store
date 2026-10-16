@@ -138,3 +138,90 @@ export function rankTopItems(
     )
     .slice(0, limit);
 }
+
+export type StockBatch = {
+  id: number;
+  itemId: number;
+  qtyRemaining: number;
+  unitCost: Dec;
+  expiryDate: Date;
+};
+export type ItemRow = {
+  id: number;
+  name: string;
+  unit: string;
+  reorderLevel: number;
+  isActive: boolean;
+};
+export type ItemStock = {
+  stock: number;
+  sellable: number;
+  expiredStock: number;
+  value: Dec;
+  expiredValue: Dec;
+};
+
+export const emptyStock = (): ItemStock => ({
+  stock: 0,
+  sellable: 0,
+  expiredStock: 0,
+  value: ZERO,
+  expiredValue: ZERO,
+});
+
+export function summarizeStock(batches: StockBatch[], today: Date) {
+  const byItem = new Map<number, ItemStock>();
+  let value = ZERO;
+  let expiredValue = ZERO;
+
+  for (const b of batches) {
+    if (b.qtyRemaining <= 0) continue;
+    const s = byItem.get(b.itemId) ?? emptyStock();
+    const v = b.unitCost.mul(b.qtyRemaining);
+    s.stock += b.qtyRemaining;
+    s.value = s.value.add(v);
+    if (b.expiryDate <= today) {
+      s.expiredStock += b.qtyRemaining;
+      s.expiredValue = s.expiredValue.add(v);
+      expiredValue = expiredValue.add(v);
+    } else {
+      s.sellable += b.qtyRemaining;
+    }
+    value = value.add(v);
+    byItem.set(b.itemId, s);
+  }
+  for (const s of byItem.values()) {
+    s.value = s.value.toDecimalPlaces(2);
+    s.expiredValue = s.expiredValue.toDecimalPlaces(2);
+  }
+  return {
+    byItem,
+    value: value.toDecimalPlaces(2),
+    expiredValue: expiredValue.toDecimalPlaces(2),
+  };
+}
+
+export function staleItems(
+  items: ItemRow[],
+  byItem: Map<number, ItemStock>,
+  activeIds: Set<number>,
+) {
+  return items
+    .filter(
+      (i) =>
+        i.isActive &&
+        !activeIds.has(i.id) &&
+        (byItem.get(i.id)?.sellable ?? 0) > 0,
+    )
+    .map((i) => {
+      const s = byItem.get(i.id)!;
+      return {
+        itemId: i.id,
+        name: i.name,
+        unit: i.unit,
+        sellable: s.sellable,
+        value: s.value.sub(s.expiredValue),
+      };
+    })
+    .sort((a, b) => b.value.cmp(a.value) || a.itemId - b.itemId);
+}

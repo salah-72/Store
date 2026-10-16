@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import {
   OverviewQuery,
   SalesByDayQuery,
+  StaleStockQuery,
   TopItemsQuery,
 } from './stats.validation';
 import * as service from './stats.service';
@@ -26,4 +27,10 @@ export const topItems = catchAsync(async (req: Request, res: Response) => {
     success: true,
     data: await service.getTopItems(q),
   });
+});
+
+export const staleStock = catchAsync(async (req: Request, res: Response) => {
+  const q = req.query as unknown as StaleStockQuery;
+  q.limit = Number(q.limit) || 30;
+  res.json({ success: true, data: await service.getStaleStock(q) });
 });

@@ -137,6 +137,47 @@ paths:
           description: Invalid date parameters or query range
         '401':
           description: Unauthorized
+  /stale-stock:
+    get:
+      summary: Get Stale/Dormant Inventory Stock Analysis and Tied-Up Capital
+      tags:
+        - Financial Analytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+            minimum: 7
+            maximum: 730
+            default: 90
+          description: Inactivity threshold in days (items with no sales or purchases within this period are flagged as stale)
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 30
+          description: Maximum number of stale items to return in the list
+      responses:
+        '200':
+          description: Stale stock analysis retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/StaleStockResponse'
+        '400':
+          description: Invalid query parameters
+        '401':
+          description: Unauthorized
 
 components:
   schemas:
@@ -380,3 +421,51 @@ components:
           type: string
           nullable: true
           example: 'KG'
+
+    StaleStockResponse:
+      type: object
+      properties:
+        days:
+          type: integer
+          example: 90
+          description: Inactivity window used for flagging stale stock
+        count:
+          type: integer
+          example: 12
+          description: Total number of unique items flagged as stale
+        value:
+          type: number
+          example: 45200.00
+          description: Total financial value of capital tied up across all stale inventory
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaleStockItemResponse'
+
+    StaleStockItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 14
+        name:
+          type: string
+          example: 'Specialized Fungicide X'
+        unit:
+          type: string
+          nullable: true
+          example: 'LITER'
+        qtyRemaining:
+          type: number
+          example: 150.00
+          description: Total remaining quantity in stock across active batches
+        value:
+          type: number
+          example: 12500.00
+          description: Total financial value of remaining stock for this item
+        lastActivityDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2025-06-10T00:00:00.000Z'
+          description: Date of the last recorded sale or purchase

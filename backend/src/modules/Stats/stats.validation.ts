@@ -31,6 +31,12 @@ export const topItemsQuery = z
   })
   .refine((q) => !q.from || !q.to || q.from <= q.to, fromBeforeTo);
 
+export const staleStockQuery = z.object({
+  days: z.coerce.number().int().min(7).max(730).default(90),
+  limit: z.coerce.number().int().min(1).max(200).default(30),
+});
+
 export type OverviewQuery = z.infer<typeof overviewQuery>;
 export type SalesByDayQuery = z.infer<typeof salesByDayQuery>;
 export type TopItemsQuery = z.infer<typeof topItemsQuery>;
+export type StaleStockQuery = z.infer<typeof staleStockQuery>;

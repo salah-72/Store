@@ -12,10 +12,16 @@ import {
   monthStart,
   OverviewData,
   rankTopItems,
+  staleItems,
+  summarizeStock,
 } from './stats.helpers';
 import { prisma } from '@/config/postgres';
 import { Prisma } from '@prisma/client';
-import { SalesByDayQuery, TopItemsQuery } from './stats.validation';
+import {
+  SalesByDayQuery,
+  StaleStockQuery,
+  TopItemsQuery,
+} from './stats.validation';
 
 const ZERO = new Prisma.Decimal(0);
 const sum = (v: Prisma.Decimal | null | undefined) => v ?? ZERO;
@@ -252,5 +258,57 @@ export async function getTopItems(q: TopItemsQuery) {
       name: byId.get(r.itemId)?.name ?? '',
       unit: byId.get(r.itemId)?.unit ?? null,
     })),
+  };
+}
+
+const todayAsDate = (today: string) => new Date(`${today}T00:00:00.000Z`);
+
+export async function getStaleStock(q: StaleStockQuery) {
+  const today = cairoToday();
+  const since = { gte: cairoStartOfDay(addDaysYMD(today, -q.days)) };
+
+  const [batches, items, soldRecently, boughtRecently] = await Promise.all([
+    prisma.batch.findMany({
+      where: { qtyRemaining: { gt: 0 } },
+      select: {
+        id: true,
+        itemId: true,
+        qtyRemaining: true,
+        unitCost: true,
+        expiryDate: true,
+      },
+    }),
+    prisma.item.findMany({
+      select: {
+        id: true,
+        name: true,
+        unit: true,
+        reorderLevel: true,
+        isActive: true,
+      },
+    }),
+    prisma.saleLine.groupBy({
+      by: ['itemId'],
+      where: { sale: { date: since } },
+      _count: { _all: true },
+    }),
+    prisma.purchaseLine.groupBy({
+      by: ['itemId'],
+      where: { purchase: { date: since } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const recent = new Set<number>(
+    [...soldRecently, ...boughtRecently].map((r) => r.itemId),
+  );
+  const { byItem } = summarizeStock(batches, todayAsDate(today));
+  const rows = staleItems(items, byItem, recent);
+
+  return {
+    days: q.days,
+    count: rows.length,
+    value: rows.reduce((s, r) => s.add(r.value), ZERO),
+    items: rows.slice(0, q.limit),
   };
 }
