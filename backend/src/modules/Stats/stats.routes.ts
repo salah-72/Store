@@ -2,17 +2,25 @@ import { Router } from 'express';
 import { protect } from '../Auth/controllers/authController';
 import { validateRequest } from '@/common/middlewares/validation';
 import {
+  dashboardQuery,
   overviewQuery,
   salesByDayQuery,
   staleStockQuery,
   topItemsQuery,
 } from './stats.validation';
-import { overview, salesByDay, staleStock, topItems } from './stats.controller';
+import {
+  dashboard,
+  overview,
+  salesByDay,
+  staleStock,
+  topItems,
+} from './stats.controller';
 
 const router = Router();
 
 router.use(protect);
 
+router.get('/dashboard', validateRequest({ query: dashboardQuery }), dashboard);
 router.get('/overview', validateRequest({ query: overviewQuery }), overview);
 router.get(
   '/sales-by-day',

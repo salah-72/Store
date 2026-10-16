@@ -1,10 +1,13 @@
-import { addDaysYMD } from '@/common/utils/date';
+import { addDaysYMD, EXPIRY_CUTOFF } from '@/common/utils/date';
 import { Prisma } from '@prisma/client';
 
 export const monthStart = (today: string) => `${today.slice(0, 8)}01`;
+export const lastDays = (today: string, n: number) =>
+  Array.from({ length: n }, (_, i) => addDaysYMD(today, i - (n - 1)));
 
 type Dec = Prisma.Decimal;
 const ZERO = new Prisma.Decimal(0);
+const dayMs = 86_400_000;
 
 export const costOf = (groups: { unitCost: Dec; qty: number }[]) =>
   groups
@@ -224,4 +227,90 @@ export function staleItems(
       };
     })
     .sort((a, b) => b.value.cmp(a.value) || a.itemId - b.itemId);
+}
+
+export function topOwed(
+  rows: { id: number; name: string; remaining: Dec }[],
+  limit: number,
+) {
+  const owed = rows
+    .filter((r) => r.remaining.gt(0))
+    .sort((a, b) => b.remaining.cmp(a.remaining) || a.id - b.id);
+  return {
+    total: owed.reduce((s, r) => s.add(r.remaining), ZERO),
+    count: owed.length,
+    top: owed.slice(0, limit),
+  };
+}
+
+export function lowStockItems(
+  items: ItemRow[],
+  byItem: Map<number, ItemStock>,
+) {
+  return items
+    .filter(
+      (i) =>
+        i.isActive &&
+        i.reorderLevel > 0 &&
+        (byItem.get(i.id)?.sellable ?? 0) <= i.reorderLevel,
+    )
+    .map((i) => ({
+      itemId: i.id,
+      name: i.name,
+      unit: i.unit,
+      reorderLevel: i.reorderLevel,
+      sellable: byItem.get(i.id)?.sellable ?? 0,
+    }))
+    .sort(
+      (a, b) =>
+        a.sellable / a.reorderLevel - b.sellable / b.reorderLevel ||
+        a.itemId - b.itemId,
+    );
+}
+
+export function nearExpiryBatches(
+  batches: StockBatch[],
+  items: Map<number, ItemRow>,
+  today: Date,
+  days: number,
+) {
+  const limit = today.getTime() + days * dayMs;
+  return batches
+    .filter(
+      (b) =>
+        b.qtyRemaining > 0 &&
+        b.expiryDate > today &&
+        b.expiryDate.getTime() <= limit &&
+        b.expiryDate < EXPIRY_CUTOFF,
+    )
+    .sort(
+      (a, b) => a.expiryDate.getTime() - b.expiryDate.getTime() || a.id - b.id,
+    )
+    .map((b) => ({
+      batchId: b.id,
+      itemId: b.itemId,
+      name: items.get(b.itemId)?.name ?? '',
+      expiryDate: b.expiryDate,
+      daysLeft: Math.round((b.expiryDate.getTime() - today.getTime()) / dayMs),
+      qtyRemaining: b.qtyRemaining,
+      value: b.unitCost.mul(b.qtyRemaining).toDecimalPlaces(2),
+    }));
+}
+
+export function expiredBatches(
+  batches: StockBatch[],
+  items: Map<number, ItemRow>,
+  today: Date,
+) {
+  return batches
+    .filter((b) => b.qtyRemaining > 0 && b.expiryDate <= today)
+    .map((b) => ({
+      batchId: b.id,
+      itemId: b.itemId,
+      name: items.get(b.itemId)?.name ?? '',
+      expiryDate: b.expiryDate,
+      qtyRemaining: b.qtyRemaining,
+      value: b.unitCost.mul(b.qtyRemaining).toDecimalPlaces(2),
+    }))
+    .sort((a, b) => b.value.cmp(a.value) || a.batchId - b.batchId);
 }

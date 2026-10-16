@@ -9,15 +9,24 @@ import {
   bucketByDay,
   costOf,
   daysBetween,
+  expiredBatches,
+  ItemRow,
+  lastDays,
+  lowStockItems,
   monthStart,
+  nearExpiryBatches,
   OverviewData,
   rankTopItems,
   staleItems,
   summarizeStock,
+  topOwed,
 } from './stats.helpers';
 import { prisma } from '@/config/postgres';
 import { Prisma } from '@prisma/client';
+import { summariesFor as supplierSummaries } from '../Suppliers/supplier.service';
+import { summariesFor as customerSummaries } from '../Customers/customer.service';
 import {
+  DashboardQuery,
   SalesByDayQuery,
   StaleStockQuery,
   TopItemsQuery,
@@ -310,5 +319,126 @@ export async function getStaleStock(q: StaleStockQuery) {
     count: rows.length,
     value: rows.reduce((s, r) => s.add(r.value), ZERO),
     items: rows.slice(0, q.limit),
+  };
+}
+
+export async function getDashboard(q: DashboardQuery) {
+  const today = cairoToday();
+  const todayDate = todayAsDate(today);
+  const todayRange = rangeOf(today, today);
+
+  const [
+    month,
+    salesToday,
+    returnsToday,
+    last7Days,
+    customers,
+    suppliers,
+    batches,
+    itemRows,
+  ] = await Promise.all([
+    getOverview(monthStart(today), today),
+    prisma.sale.aggregate({
+      where: { date: todayRange },
+      _sum: { total: true },
+      _count: { _all: true },
+    }),
+    prisma.saleReturn.aggregate({
+      where: { date: todayRange },
+      _sum: { total: true },
+    }),
+    salesPerDay(lastDays(today, 7)),
+    prisma.customer.findMany({
+      select: { id: true, name: true, openingBalance: true },
+    }),
+    prisma.supplier.findMany({
+      select: { id: true, name: true, openingBalance: true },
+    }),
+    prisma.batch.findMany({
+      where: { qtyRemaining: { gt: 0 } },
+      select: {
+        id: true,
+        itemId: true,
+        qtyRemaining: true,
+        unitCost: true,
+        expiryDate: true,
+      },
+    }),
+    prisma.item.findMany({
+      select: {
+        id: true,
+        name: true,
+        unit: true,
+        reorderLevel: true,
+        isActive: true,
+      },
+    }),
+  ]);
+
+  const [customerSums, supplierSums] = await Promise.all([
+    customerSummaries(customers),
+    supplierSummaries(suppliers),
+  ]);
+  const receivables = topOwed(
+    customers.map((c) => ({
+      id: c.id,
+      name: c.name,
+      remaining: customerSums.get(c.id)!.remaining,
+    })),
+    5,
+  );
+  const payables = topOwed(
+    suppliers.map((s) => ({
+      id: s.id,
+      name: s.name,
+      remaining: supplierSums.get(s.id)!.remaining,
+    })),
+    5,
+  );
+
+  const items = new Map<number, ItemRow>(
+    itemRows.map((i): [number, ItemRow] => [i.id, i]),
+  );
+  const { byItem, value, expiredValue } = summarizeStock(batches, todayDate);
+  const low = lowStockItems(itemRows, byItem);
+  const near = nearExpiryBatches(batches, items, todayDate, q.expiryDays);
+  const expired = expiredBatches(batches, items, todayDate);
+
+  const soldToday = sum(salesToday._sum.total);
+  const returnedToday = sum(returnsToday._sum.total);
+
+  return {
+    today: {
+      date: today,
+      salesCount: salesToday._count._all,
+      sales: soldToday,
+      returns: returnedToday,
+      net: soldToday.sub(returnedToday),
+    },
+    month: {
+      from: month.period.from,
+      to: month.period.to,
+      netSales: month.sales.net,
+      grossProfit: month.grossProfit,
+      expenses: month.expenses.total,
+      netProfit: month.netProfit,
+    },
+    receivables,
+    payables,
+    last7Days,
+    stock: { value, expiredValue },
+    alerts: {
+      lowStock: { count: low.length, items: low.slice(0, 10) },
+      nearExpiry: {
+        days: q.expiryDays,
+        count: near.length,
+        batches: near.slice(0, 10),
+      },
+      expired: {
+        count: expired.length,
+        value: expired.reduce((s, b) => s.add(b.value), ZERO),
+        batches: expired.slice(0, 10),
+      },
+    },
   };
 }

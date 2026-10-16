@@ -1,6 +1,7 @@
 import catchAsync from '@/common/utils/catchAsync';
 import { Request, Response } from 'express';
 import {
+  DashboardQuery,
   OverviewQuery,
   SalesByDayQuery,
   StaleStockQuery,
@@ -33,4 +34,11 @@ export const staleStock = catchAsync(async (req: Request, res: Response) => {
   const q = req.query as unknown as StaleStockQuery;
   q.limit = Number(q.limit) || 30;
   res.json({ success: true, data: await service.getStaleStock(q) });
+});
+
+export const dashboard = catchAsync(async (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: await service.getDashboard(req.query as unknown as DashboardQuery),
+  });
 });

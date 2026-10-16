@@ -178,6 +178,39 @@ paths:
           description: Invalid query parameters
         '401':
           description: Unauthorized
+  /dashboard:
+    get:
+      summary: Get Executive Dashboard Summary (Financials, Working Capital, Inventory Valuation, and Operational Alerts)
+      tags:
+        - Financial Analytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: expiryDays
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+          description: Threshold in days for flagging near-expiry batch inventory alerts
+      responses:
+        '200':
+          description: Executive dashboard summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DashboardResponse'
+        '400':
+          description: Invalid query parameters
+        '401':
+          description: Unauthorized
 
 components:
   schemas:
@@ -469,3 +502,163 @@ components:
           nullable: true
           example: '2025-06-10T00:00:00.000Z'
           description: Date of the last recorded sale or purchase
+
+    DashboardResponse:
+      type: object
+      properties:
+        today:
+          type: object
+          properties:
+            date:
+              type: string
+              example: '2026-10-16'
+            salesCount:
+              type: integer
+              example: 18
+            sales:
+              type: number
+              example: 45200.00
+            returns:
+              type: number
+              example: 1200.00
+            net:
+              type: number
+              example: 44000.00
+        month:
+          type: object
+          properties:
+            from:
+              type: string
+              example: '2026-10-01'
+            to:
+              type: string
+              example: '2026-10-16'
+            netSales:
+              type: number
+              example: 315000.00
+            grossProfit:
+              type: number
+              example: 92000.00
+            expenses:
+              type: number
+              example: 18400.00
+            netProfit:
+              type: number
+              example: 73600.00
+        receivables:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardEntityOwedResponse'
+        payables:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardEntityOwedResponse'
+        last7Days:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailySalesItemResponse'
+        stock:
+          type: object
+          properties:
+            value:
+              type: number
+              example: 1450000.00
+              description: Total active inventory valuation based on remaining quantities and batch unit costs
+            expiredValue:
+              type: number
+              example: 3500.00
+              description: Total financial value trapped in expired batches
+        alerts:
+          type: object
+          properties:
+            lowStock:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  example: 3
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 5
+                      name:
+                        type: string
+                        example: 'Glyphosate Herbicide 48%'
+                      unit:
+                        type: string
+                        example: 'LITER'
+                      reorderLevel:
+                        type: number
+                        example: 50.00
+            nearExpiry:
+              type: object
+              properties:
+                days:
+                  type: integer
+                  example: 30
+                count:
+                  type: integer
+                  example: 2
+                batches:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 22
+                      itemId:
+                        type: integer
+                        example: 8
+                      qtyRemaining:
+                        type: number
+                        example: 45.00
+                      expiryDate:
+                        type: string
+                        format: date-time
+                        example: '2026-11-05T00:00:00.000Z'
+            expired:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  example: 1
+                value:
+                  type: number
+                  example: 1200.00
+                batches:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 14
+                      itemId:
+                        type: integer
+                        example: 3
+                      qtyRemaining:
+                        type: number
+                        example: 10.00
+                      expiryDate:
+                        type: string
+                        format: date-time
+                        example: '2026-09-30T00:00:00.000Z'
+
+    DashboardEntityOwedResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 4
+        name:
+          type: string
+          example: 'Green Valley Agricultural Coop'
+        remaining:
+          type: number
+          example: 14200.00
+          description: Outstanding balance owed (receivable) or owed to (payable)

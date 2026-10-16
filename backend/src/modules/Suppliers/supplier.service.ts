@@ -22,7 +22,7 @@ async function isNameUnique(name: string) {
     throw new appError('A supplier with this name already exists', 400);
 }
 
-async function summariesFor(
+export async function summariesFor(
   suppliers: { id: number; openingBalance: Prisma.Decimal }[],
 ) {
   const result = new Map<
