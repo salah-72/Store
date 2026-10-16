@@ -115,3 +115,26 @@ export function bucketByDay(
     return { ...b, net: b.sales.sub(b.returns) };
   });
 }
+
+export function rankTopItems(
+  sold: { itemId: number; qty: number; revenue: Dec }[],
+  returned: { itemId: number; qty: number }[],
+  by: 'revenue' | 'quantity',
+  limit: number,
+) {
+  const back = new Map(returned.map((r) => [r.itemId, r.qty]));
+  return sold
+    .map((s) => ({
+      itemId: s.itemId,
+      soldQty: s.qty,
+      returnedQty: back.get(s.itemId) ?? 0,
+      netQty: s.qty - (back.get(s.itemId) ?? 0),
+      revenue: s.revenue,
+    }))
+    .sort(
+      (a, b) =>
+        (by === 'revenue' ? b.revenue.cmp(a.revenue) : b.netQty - a.netQty) ||
+        a.itemId - b.itemId,
+    )
+    .slice(0, limit);
+}

@@ -22,5 +22,15 @@ export const salesByDayQuery = z
     path: ['to'],
   });
 
+export const topItemsQuery = z
+  .object({
+    from: ymd.optional(),
+    to: ymd.optional(),
+    by: z.enum(['revenue', 'quantity']).default('revenue'),
+    limit: z.coerce.number().int().min(1).max(50).default(10),
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, fromBeforeTo);
+
 export type OverviewQuery = z.infer<typeof overviewQuery>;
 export type SalesByDayQuery = z.infer<typeof salesByDayQuery>;
+export type TopItemsQuery = z.infer<typeof topItemsQuery>;

@@ -11,10 +11,11 @@ import {
   daysBetween,
   monthStart,
   OverviewData,
+  rankTopItems,
 } from './stats.helpers';
 import { prisma } from '@/config/postgres';
 import { Prisma } from '@prisma/client';
-import { SalesByDayQuery } from './stats.validation';
+import { SalesByDayQuery, TopItemsQuery } from './stats.validation';
 
 const ZERO = new Prisma.Decimal(0);
 const sum = (v: Prisma.Decimal | null | undefined) => v ?? ZERO;
@@ -204,5 +205,52 @@ export async function getSalesByDay(q: SalesByDayQuery) {
       returns,
       net: total.sub(returns),
     },
+  };
+}
+
+export async function getTopItems(q: TopItemsQuery) {
+  const today = cairoToday();
+  const from = q.from ?? monthStart(today);
+  const to = q.to ?? today;
+  const date = rangeOf(from, to);
+
+  const [sold, returned] = await Promise.all([
+    prisma.saleLine.groupBy({
+      by: ['itemId'],
+      where: { sale: { date } },
+      _sum: { baseQty: true, lineTotal: true },
+    }),
+    prisma.saleReturnLine.groupBy({
+      by: ['itemId'],
+      where: { saleReturn: { date } },
+      _sum: { baseQty: true },
+    }),
+  ]);
+
+  const ranked = rankTopItems(
+    sold.map((s) => ({
+      itemId: s.itemId,
+      qty: s._sum.baseQty ?? 0,
+      revenue: sum(s._sum.lineTotal),
+    })),
+    returned.map((r) => ({ itemId: r.itemId, qty: r._sum.baseQty ?? 0 })),
+    q.by,
+    q.limit,
+  );
+
+  const items = await prisma.item.findMany({
+    where: { id: { in: ranked.map((r) => r.itemId) } },
+    select: { id: true, name: true, unit: true },
+  });
+  const byId = new Map(items.map((i) => [i.id, i] as const));
+
+  return {
+    period: { from, to },
+    by: q.by,
+    items: ranked.map((r) => ({
+      ...r,
+      name: byId.get(r.itemId)?.name ?? '',
+      unit: byId.get(r.itemId)?.unit ?? null,
+    })),
   };
 }
