@@ -3,6 +3,7 @@ import {
   createAdmin,
   deleteAdmin,
   getAdmins,
+  getMe,
   login,
   logout,
   protect,
@@ -38,12 +39,16 @@ router.post('/logout', protect, logout);
 
 router.post('/refresh', refreshAccessToken);
 
+router.get('/me', protect, getMe);
+
 router.patch(
   '/password',
   protect,
   validateRequest({ body: updatePasswordValidation }),
   updatePassword,
 );
+
+router.get('/admins', protect, getAdmins);
 
 router.delete(
   '/:adminId',
@@ -53,5 +58,4 @@ router.delete(
   deleteAdmin,
 );
 
-router.get('/admins', protect, getAdmins);
 export default router;

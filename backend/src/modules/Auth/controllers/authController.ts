@@ -113,6 +113,12 @@ export const protect = catchAsync(
   },
 );
 
+export const getMe = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    res.status(200).json({ success: true, status: 'success', user: req.user });
+  },
+);
+
 export const logout = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken = req.cookies?.refreshToken as string | undefined;
