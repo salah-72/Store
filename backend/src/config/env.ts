@@ -10,6 +10,7 @@ const env = {
   ACCESS_TOKEN_KEY: process.env.ACCESS_TOKEN_KEY,
   REFRESH_TOKEN_EXPIRED_IN: process.env.REFRESH_TOKEN_EXPIRED_IN,
   ACCESS_TOKEN_EXPIRED_IN: process.env.ACCESS_TOKEN_EXPIRED_IN,
+  COOKIE_SAMESITE: process.env.COOKIE_SAMESITE,
 };
 
 export default env;

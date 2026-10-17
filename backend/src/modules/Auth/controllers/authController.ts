@@ -3,6 +3,7 @@ import catchAsync from '../../../common/utils/catchAsync';
 import { prisma } from '../../../config/postgres';
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -10,29 +11,41 @@ import {
 import env from '../../../config/env';
 import jwt from 'jsonwebtoken';
 
+const hashToken = (token: string) =>
+  crypto.createHash('sha256').update(token).digest('hex');
+
+const refreshCookie = {
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production' || env.COOKIE_SAMESITE === 'none',
+  sameSite: env.COOKIE_SAMESITE as 'strict' | 'lax' | 'none',
+  path: '/auth',
+} as const;
+
+const setRefreshCookie = (res: Response, token: string) => {
+  const { exp } = jwt.decode(token) as { exp: number };
+  res.cookie('refreshToken', token, {
+    ...refreshCookie,
+    maxAge: exp * 1000 - Date.now(),
+  });
+};
+
 export const createAdmin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { username, password } = req.body;
     const adminExist = await prisma.admin.findUnique({
-      where: {
-        username,
-      },
+      where: { username },
+      select: { id: true },
     });
 
-    if (adminExist) return next(new appError('this username is used', 400));
+    if (adminExist) return next(new appError('this username is used', 409));
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
     await prisma.admin.create({
-      data: {
-        username,
-        password: hashedPassword,
-      },
+      data: { username, password: hashedPassword },
     });
 
-    res.status(201).json({
-      status: 'success',
-    });
+    res.status(201).json({ success: true, status: 'success' });
   },
 );
 
@@ -49,34 +62,21 @@ export const login = catchAsync(
       return next(new appError('Invalid username or password', 401));
     }
 
-    const refreshToken = await generateRefreshToken(user.id);
-    const accessToken = await generateAccessToken(user.id);
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 20 * 24 * 60 * 60 * 1000,
-    });
+    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken(user.id);
 
     await prisma.refreshToken.upsert({
-      where: {
-        adminId: user.id,
-      },
-      update: {
-        token: refreshToken,
-      },
-      create: {
-        adminId: user.id,
-        token: refreshToken,
-      },
+      where: { adminId: user.id },
+      update: { token: hashToken(refreshToken) },
+      create: { adminId: user.id, token: hashToken(refreshToken) },
     });
 
-    const { password: _, ...adminData } = user;
+    setRefreshCookie(res, refreshToken);
 
     res.status(200).json({
+      success: true,
       status: 'success',
-      user: adminData,
+      user: { id: user.id, username: user.username },
       accessToken,
     });
   },
@@ -103,6 +103,7 @@ export const protect = catchAsync(
 
     const user = await prisma.admin.findUnique({
       where: { id: payload.id },
+      select: { id: true, username: true },
     });
 
     if (!user) return next(new appError('admin not found', 401));
@@ -114,24 +115,19 @@ export const protect = catchAsync(
 
 export const logout = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const refreshToken = req.cookies.refreshToken as string;
+    const refreshToken = req.cookies?.refreshToken as string | undefined;
 
-    if (!refreshToken) return next(new appError('you are not logging in', 400));
+    if (refreshToken) {
+      await prisma.refreshToken.deleteMany({
+        where: { token: hashToken(refreshToken) },
+      });
+    }
 
-    await prisma.refreshToken.deleteMany({
-      where: {
-        token: refreshToken,
-      },
-    });
-
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
-    });
+    res.clearCookie('refreshToken', refreshCookie);
 
     res.status(200).json({
-      success: 'success',
+      success: true,
+      status: 'success',
       message: 'logout successfully',
     });
   },
@@ -140,16 +136,10 @@ export const logout = catchAsync(
 export const refreshAccessToken = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken =
-      (req.cookies.refreshToken as string) || (req.body.refreshToken as string);
+      (req.cookies?.refreshToken as string | undefined) ||
+      (req.body?.refreshToken as string | undefined);
     if (!refreshToken)
       return next(new appError('refresh token not exist', 401));
-
-    const exist = await prisma.refreshToken.findFirst({
-      where: { token: refreshToken },
-    });
-
-    if (!exist)
-      return next(new appError('refresh token not exist, log in again', 401));
 
     let payload: JwtPayload;
     try {
@@ -160,19 +150,24 @@ export const refreshAccessToken = catchAsync(
     } catch (err) {
       return next(new appError('Invalid or expired token', 401));
     }
+
+    const stored = await prisma.refreshToken.findFirst({
+      where: { token: hashToken(refreshToken), adminId: payload.id },
+    });
+    if (!stored)
+      return next(new appError('refresh token not exist, log in again', 401));
+
     const admin = await prisma.admin.findUnique({
       where: { id: payload.id },
+      select: { id: true, username: true },
     });
-
-    if (!admin) {
-      return next(new appError('User no longer exists', 401));
-    }
-
-    const accessToken = generateAccessToken(admin.id);
+    if (!admin) return next(new appError('User no longer exists', 401));
 
     res.status(200).json({
+      success: true,
       status: 'success',
-      accessToken,
+      user: admin,
+      accessToken: generateAccessToken(admin.id),
     });
   },
 );
@@ -181,23 +176,25 @@ export const updatePassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { oldPassword, newPassword } = req.body;
 
-    const isCorrect = await bcrypt.compare(oldPassword, req.user!.password);
-    if (!isCorrect) {
+    const admin = await prisma.admin.findUnique({
+      where: { id: req.user!.id },
+    });
+    if (!admin || !(await bcrypt.compare(oldPassword, admin.password))) {
       return next(new appError('Old password is wrong', 401));
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
 
     await prisma.admin.update({
-      where: { id: req.user!.id },
+      where: { id: admin.id },
       data: { password: hashedNewPassword },
     });
 
-    await prisma.refreshToken.deleteMany({
-      where: { adminId: req.user!.id },
-    });
+    await prisma.refreshToken.deleteMany({ where: { adminId: admin.id } });
+    res.clearCookie('refreshToken', refreshCookie);
 
     res.status(200).json({
+      success: true,
       status: 'success',
       message: 'password changed successfully, please log in again',
     });
@@ -208,24 +205,20 @@ export const deleteAdmin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const adminId = Number(req.params.adminId);
 
-    await prisma.admin.delete({
-      where: { id: adminId },
-    });
+    await prisma.admin.delete({ where: { id: adminId } });
 
     res.status(204).send();
   },
 );
-
 export const getAdmins = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const admins = await prisma.admin.findMany({
       select: { id: true, username: true },
     });
     res.status(200).json({
+      success: true,
       status: 'success',
-      data: {
-        admins,
-      },
+      data: { admins },
     });
   },
 );

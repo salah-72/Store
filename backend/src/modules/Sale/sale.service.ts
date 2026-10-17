@@ -276,7 +276,7 @@ export async function updateSale(id: number, input: UpdateSaleInput) {
             409,
           );
         if (input.customerId !== null && input.customerId !== undefined) {
-          const customer = await prisma.customer.findUnique({
+          const customer = await tx.customer.findUnique({
             where: { id: input.customerId },
           });
           if (!customer) throw new appError('Customer not found', 404);

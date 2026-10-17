@@ -7,7 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 export const checkNoOfAdmins = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const admins = await prisma.admin.count();
-    if (admins === 1) return next(new appError('You are the only admin', 400));
+    if (admins <= 1) return next(new appError('You are the only admin', 400));
 
     next();
   },
@@ -16,9 +16,12 @@ export const checkNoOfAdmins = catchAsync(
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
+  skipSuccessfulRequests: true,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: {
-    error: 'Too many login attempts, please try again after 15 minutes',
+    success: false,
+    status: 'fail',
+    message: 'Too many login attempts, please try again after 15 minutes',
   },
 });
