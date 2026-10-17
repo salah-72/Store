@@ -15,7 +15,7 @@ import paymentRouter from './modules/Payments/payment.routes';
 import adjustmentRouter from './modules/Adjustment/adjustment.routes';
 import expenseRouter from './modules/Expenses/expense.routes';
 import statsRouter from './modules/Stats/stats.routes';
-import errorHandler from './common/middlewares/errorHandler';
+import errorHandler, { notFound } from './common/middlewares/errorHandler';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import helmet from 'helmet';
@@ -107,12 +107,14 @@ const swaggerDocument = {
 };
 
 const limiter = rateLimit({
-  limit: 60,
-  windowMs: 30000,
+  limit: 300,
+  windowMs: 60000,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: {
-    error: 'too many requests from same ip, try again later',
+    success: false,
+    status: 'fail',
+    message: 'too many requests from same ip, try again later',
   },
 });
 
@@ -123,7 +125,7 @@ app.use(
   }),
 );
 app.use(limiter);
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '100kb' }));
 app.use(urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(compression({ threshold: 1024 }));
@@ -137,8 +139,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/auth', authRouter);
 app.use('/items', itemRouter);
 app.use('/suppliers', supplierRouter);
-app.use('/purchase', purchaseRouter);
-app.use('/customer', customerRouter);
+app.use('/purchases', purchaseRouter);
+app.use('/customers', customerRouter);
 app.use('/sales', salesRouter);
 app.use('/sale-returns', saleReturnRouter);
 app.use('/purchase-returns', purchaseReturnRouter);
@@ -147,6 +149,7 @@ app.use('/stock-adjustments', adjustmentRouter);
 app.use('/expenses', expenseRouter);
 app.use('/stats', statsRouter);
 
+app.use(notFound);
 app.use(errorHandler);
 
 export default app;
