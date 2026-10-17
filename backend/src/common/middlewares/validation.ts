@@ -33,6 +33,7 @@ export const validateRequest = (schema: validationSchema) => {
     } catch (error) {
       if (error instanceof ZodError) {
         return res.status(400).json({
+          success: false,
           status: 'fail',
           message: 'Validation error',
           errors: error.issues.map((err) => ({
