@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import ItemsPage from './pages/ItemsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -20,6 +21,7 @@ export default function App() {
             <Route element={<ProtectedRoute />}>
               <Route element={<Layout />}>
                 <Route index element={<DashboardPage />} />
+                <Route path="items" element={<ItemsPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 // الأقسام اللي هنبنيها واحد واحد. اللي "soon" مش شغال لسه.
 const sections = [
   { to: '/', label: 'الرئيسية' },
-  { to: '/items', label: 'الأصناف', soon: true },
+  { to: '/items', label: 'الأصناف' },
   { to: '/sales', label: 'البيع', soon: true },
   { to: '/purchases', label: 'الشراء', soon: true },
   { to: '/customers', label: 'العملاء', soon: true },
