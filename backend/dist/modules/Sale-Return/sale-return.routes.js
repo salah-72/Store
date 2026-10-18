@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authController_1 = require("../Auth/controllers/authController");
+const validation_1 = require("../../common/middlewares/validation.js");
+const supplier_validation_1 = require("../Suppliers/supplier.validation");
+const sale_return_controller_1 = require("./sale-return.controller");
+const sale_return_validation_1 = require("./sale-return.validation");
+const router = (0, express_1.Router)();
+router.use(authController_1.protect);
+router.get('/', (0, validation_1.validateRequest)({ query: sale_return_validation_1.listSaleReturnsQuery }), sale_return_controller_1.list);
+router.post('/', (0, validation_1.validateRequest)({ body: sale_return_validation_1.createSaleReturnSchema }), sale_return_controller_1.create);
+router.get('/returnable/:saleId', (0, validation_1.validateRequest)({ params: sale_return_validation_1.saleIdParam }), sale_return_controller_1.returnable);
+router.get('/:id', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam }), sale_return_controller_1.getSaleReturn);
+router.patch('/:id', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam, body: sale_return_validation_1.updateSaleReturnSchema }), sale_return_controller_1.update);
+router.delete('/:id', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam }), sale_return_controller_1.remove);
+exports.default = router;

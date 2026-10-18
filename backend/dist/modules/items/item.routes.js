@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authController_1 = require("../Auth/controllers/authController");
+const item_controller_1 = require("./item.controller");
+const validation_1 = require("../../common/middlewares/validation.js");
+const item_validation_1 = require("./item.validation");
+const router = (0, express_1.Router)();
+router.use(authController_1.protect);
+router.get('/', (0, validation_1.validateRequest)({ query: item_validation_1.listItemsQuery }), item_controller_1.listItem);
+router.post('/', (0, validation_1.validateRequest)({ body: item_validation_1.createItemSchema }), item_controller_1.createItem);
+router.get('/:id', (0, validation_1.validateRequest)({ params: item_validation_1.itemIdParam }), item_controller_1.getItem);
+router.patch('/:id', (0, validation_1.validateRequest)({ params: item_validation_1.itemIdParam, body: item_validation_1.updateItemSchema }), item_controller_1.updateItem);
+router.patch('/:id/status', (0, validation_1.validateRequest)({ params: item_validation_1.itemIdParam, body: item_validation_1.setItemStatusSchema }), item_controller_1.setItemStatus);
+exports.default = router;

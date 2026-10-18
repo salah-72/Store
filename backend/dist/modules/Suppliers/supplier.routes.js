@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authController_1 = require("../Auth/controllers/authController");
+const validation_1 = require("../../common/middlewares/validation.js");
+const supplier_controller_1 = require("./supplier.controller");
+const supplier_validation_1 = require("./supplier.validation");
+const router = (0, express_1.Router)();
+router.use(authController_1.protect);
+router.get('/', (0, validation_1.validateRequest)({ query: supplier_validation_1.listSuppliersQuery }), supplier_controller_1.getSupplierList);
+router.post('/', (0, validation_1.validateRequest)({ body: supplier_validation_1.createSupplierSchema }), supplier_controller_1.createSupplier);
+router.get('/:id', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam }), supplier_controller_1.getSupplier);
+router.get('/:id/statement', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam, query: supplier_validation_1.statementQuery }), supplier_controller_1.statement);
+router.patch('/:id', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam, body: supplier_validation_1.updateSupplierSchema }), supplier_controller_1.updateSupplier);
+router.patch('/:id/status', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam, body: supplier_validation_1.setSupplierStatusSchema }), supplier_controller_1.setSupplierStatus);
+exports.default = router;

@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const validation_1 = require("../../../common/middlewares/validation.js");
+const authController_1 = require("../../../modules/Auth/controllers/authController");
+const authValidation_1 = require("../../../modules/Auth/validations/authValidation");
+const express_1 = require("express");
+const authMiddlewares_1 = require("../middlewares/authMiddlewares");
+const router = (0, express_1.Router)();
+router.post('/newAdmin', authController_1.protect, (0, validation_1.validateRequest)({ body: authValidation_1.addAdminValidation }), authController_1.createAdmin);
+router.post('/login', authMiddlewares_1.loginLimiter, (0, validation_1.validateRequest)({ body: authValidation_1.loginValidation }), authController_1.login);
+router.post('/logout', authController_1.protect, authController_1.logout);
+router.post('/refresh', authController_1.refreshAccessToken);
+router.get('/me', authController_1.protect, authController_1.getMe);
+router.patch('/password', authController_1.protect, (0, validation_1.validateRequest)({ body: authValidation_1.updatePasswordValidation }), authController_1.updatePassword);
+router.get('/admins', authController_1.protect, authController_1.getAdmins);
+router.delete('/:adminId', authController_1.protect, (0, validation_1.validateRequest)({ params: authValidation_1.deleteAdminValidation }), authMiddlewares_1.checkNoOfAdmins, authController_1.deleteAdmin);
+exports.default = router;

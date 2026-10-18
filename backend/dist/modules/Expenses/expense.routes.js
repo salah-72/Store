@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authController_1 = require("../Auth/controllers/authController");
+const validation_1 = require("../../common/middlewares/validation.js");
+const expense_validation_1 = require("./expense.validation");
+const expense_controller_1 = require("./expense.controller");
+const supplier_validation_1 = require("../Suppliers/supplier.validation");
+const router = (0, express_1.Router)();
+router.use(authController_1.protect);
+router.get('/', (0, validation_1.validateRequest)({ query: expense_validation_1.listExpensesQuery }), expense_controller_1.list);
+router.get('/categories', expense_controller_1.categories);
+router.post('/', (0, validation_1.validateRequest)({ body: expense_validation_1.createExpenseSchema }), expense_controller_1.create);
+router.get('/:id', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam }), expense_controller_1.getOne);
+router.patch('/:id', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam, body: expense_validation_1.updateExpenseSchema }), expense_controller_1.update);
+router.delete('/:id', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam }), expense_controller_1.remove);
+exports.default = router;

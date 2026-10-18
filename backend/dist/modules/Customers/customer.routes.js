@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authController_1 = require("../Auth/controllers/authController");
+const validation_1 = require("../../common/middlewares/validation.js");
+const customer_validation_1 = require("./customer.validation");
+const customer_controller_1 = require("./customer.controller");
+const supplier_validation_1 = require("../Suppliers/supplier.validation");
+const router = (0, express_1.Router)();
+router.use(authController_1.protect);
+router.get('/', (0, validation_1.validateRequest)({ query: customer_validation_1.listCustomersQuery }), customer_controller_1.getCustomerList);
+router.post('/', (0, validation_1.validateRequest)({ body: customer_validation_1.createCustomerSchema }), customer_controller_1.createCustomer);
+router.get('/:id', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam }), customer_controller_1.getCustomer);
+router.get('/:id/statement', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam, query: customer_validation_1.statementQuery }), customer_controller_1.statement);
+router.patch('/:id', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam, body: customer_validation_1.updateCustomerSchema }), customer_controller_1.update);
+router.patch('/:id/status', (0, validation_1.validateRequest)({ params: supplier_validation_1.idParam, body: customer_validation_1.setCustomerStatusSchema }), customer_controller_1.setStatus);
+exports.default = router;
