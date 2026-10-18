@@ -29,4 +29,6 @@ export const ymdOf = (iso: string) => iso.slice(0, 10)
 export const fmtDate = (iso: string) => { const [y, m, d] = ymdOf(iso).split('-'); return `${d}/${m}/${y}` }
 export const daysUntil = (iso: string) =>
   Math.round((Date.parse(`${ymdOf(iso)}T00:00:00Z`) - Date.parse(`${todayYmd()}T00:00:00Z`)) / 864e5)
+// السيرفر بيخزن "بدون صلاحية" كتاريخ سنة 3030
+export const hasExpiryDate = (iso: string | null | undefined): iso is string => !!iso && Number(iso.slice(0, 4)) < 3000
 export const NEAR_EXPIRY_DAYS = 90

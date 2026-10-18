@@ -1,17 +1,18 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "./auth/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Layout from "./components/Layout";
-import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashboardPage";
-import ItemsPage from "./pages/ItemsPage";
-import SuppliersPage from "./pages/SuppliersPage";
-import SupplierDetailsPage from "./pages/SupplierDetailsPage";
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from './auth/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
+import Layout from './components/Layout'
+import LoginPage from './pages/LoginPage'
+import DashboardPage from './pages/DashboardPage'
+import ItemsPage from './pages/ItemsPage'
+import PartiesPage from './pages/PartiesPage'
+import PartyDetailPage from './pages/PartyDetailPage'
+import ItemDetailPage from './pages/ItemDetailPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
-});
+})
 
 export default function App() {
   return (
@@ -24,11 +25,11 @@ export default function App() {
               <Route element={<Layout />}>
                 <Route index element={<DashboardPage />} />
                 <Route path="items" element={<ItemsPage />} />
-                <Route path="/suppliers" element={<SuppliersPage />} />
-                <Route
-                  path="/suppliers/:id"
-                  element={<SupplierDetailsPage />}
-                />
+                <Route path="items/:id" element={<ItemDetailPage />} />
+                <Route path="suppliers" element={<PartiesPage kind="suppliers" />} />
+                <Route path="suppliers/:id" element={<PartyDetailPage kind="suppliers" />} />
+                <Route path="customers" element={<PartiesPage kind="customers" />} />
+                <Route path="customers/:id" element={<PartyDetailPage kind="customers" />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -36,5 +37,5 @@ export default function App() {
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
-  );
+  )
 }

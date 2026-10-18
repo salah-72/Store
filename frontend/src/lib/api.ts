@@ -66,6 +66,11 @@ const messages: Record<string, string> = {
   'This record is used by other records': 'ده مرتبط بعمليات تانية ومينفعش يتعمل عليه كده',
   'A record with the same unique value already exists': 'البيانات دي موجودة قبل كده',
   'Record not found': 'مش موجود',
+  'A supplier with this name already exists': 'فيه مورد بنفس الاسم ده',
+  'A customer with this name already exists': 'فيه عميل بنفس الاسم ده',
+  'Supplier not found': 'المورد مش موجود',
+  'Customer not found': 'العميل مش موجود',
+  'Payment not found': 'الدفعة مش موجودة',
   'Two requests collided: please try again': 'حصل تعارض بين طلبين، جرب تاني',
   'The database was busy: please try again': 'السيرفر مشغول، جرب تاني',
   'Something went wrong!': 'حصل خطأ في السيرفر',
@@ -73,6 +78,7 @@ const messages: Record<string, string> = {
 const fields: Record<string, string> = {
   name: 'الاسم', description: 'الوصف', unit: 'الوحدة', price: 'السعر',
   packName: 'اسم العبوة', packSize: 'حجم العبوة', reorderLevel: 'حد الطلب',
+  phone: 'التليفون', openingBalance: 'الرصيد الافتتاحي', amount: 'المبلغ', date: 'التاريخ', note: 'الملاحظة',
 }
 
 export function errorMessage(e: unknown): string {
