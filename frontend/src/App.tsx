@@ -20,6 +20,8 @@ import ReturnsPage from './pages/ReturnsPage'
 import ReturnFormPage from './pages/ReturnFormPage'
 import ReturnDetailPage from './pages/ReturnDetailPage'
 import PaymentsPage from './pages/PaymentsPage'
+import ExpensesPage from './pages/ExpensesPage'
+import AdjustmentsPage from './pages/AdjustmentsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -50,6 +52,8 @@ export default function App() {
                 <Route path="returns/new" element={<ReturnFormPage />} />
                 <Route path="returns/:kind/:id" element={<ReturnDetailPage />} />
                 <Route path="payments" element={<PaymentsPage />} />
+                <Route path="expenses" element={<ExpensesPage />} />
+                <Route path="adjustments" element={<AdjustmentsPage />} />
                 <Route path="suppliers" element={<PartiesPage kind="suppliers" />} />
                 <Route path="suppliers/:id" element={<PartyDetailPage kind="suppliers" />} />
                 <Route path="customers" element={<PartiesPage kind="customers" />} />

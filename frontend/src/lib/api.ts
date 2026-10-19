@@ -89,6 +89,12 @@ const messages: Record<string, string> = {
   'The returned goods were already sold again, so this return cannot be deleted': 'البضاعة المرتجعة اتباعت تاني، فمينفعش تمسح المرتجع',
   'A return without a customer account must be refunded in cash in full': 'المرتجع من غير عميل لازم يترد كاش بالكامل',
   'Return date cannot be before the sale date': 'تاريخ المرتجع مينفعش يكون قبل تاريخ الفاتورة',
+  'Stock adjustment not found': 'التسوية مش موجودة',
+  'Batch not found': 'الباتش مش موجود',
+  'Expense not found': 'المصروف مش موجود',
+  'Category is required': 'اكتب التصنيف',
+  'Reason is required': 'اكتب السبب',
+  'Amount must be greater than zero': 'المبلغ لازم يكون أكبر من صفر',
   'Two requests collided: please try again': 'حصل تعارض بين طلبين، جرب تاني',
   'The database was busy: please try again': 'السيرفر مشغول، جرب تاني',
   'Something went wrong!': 'حصل خطأ في السيرفر',
@@ -106,6 +112,7 @@ const patterns: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^Cannot return (\d+) of "(.+)": only (\d+) are still in stock \(the rest was sold\)$/, (m) => `"${m[2]}": الباقي في المخزن ${m[3]} بس (بالوحدة الصغيرة)، والباقي اتباع`],
   [/^Cash refund must be between 0 and the return total \((.+)\)$/, (m) => `الفلوس المرجّعة لازم تكون من 0 لحد قيمة المرتجع (${m[1]})`],
   [/^Line (\d+) does not belong to (?:sale|purchase) (\d+)$/, () => 'السطر ده مش من الفاتورة دي'],
+  [/^Cannot take out (\d+): only (\d+) are in stock in this batch$/, (m) => `مينفعش تشيل ${m[1]} (بالوحدة الصغيرة): الموجود في الباتش ${m[2]} بس`],
   [/^Cannot take (\d+) units of this item$/, () => 'مينفعش تنقص الكمية دي، جزء منها اتباع أو اترجّع'],
 ]
 const fields: Record<string, string> = {
@@ -114,7 +121,7 @@ const fields: Record<string, string> = {
   saleId: 'فاتورة البيع', purchaseId: 'فاتورة الشراء', cashRefund: 'الفلوس المرجّعة',
   name: 'الاسم', description: 'الوصف', unit: 'الوحدة', price: 'السعر',
   packName: 'اسم العبوة', packSize: 'حجم العبوة', reorderLevel: 'حد الطلب',
-  phone: 'التليفون', openingBalance: 'الرصيد الافتتاحي', amount: 'المبلغ', date: 'التاريخ', note: 'الملاحظة', saleLineId: 'بند الفاتورة', purchaseLineId: 'بند الفاتورة',
+  phone: 'التليفون', openingBalance: 'الرصيد الافتتاحي', amount: 'المبلغ', date: 'التاريخ', note: 'الملاحظة', category: 'التصنيف', reason: 'السبب', batchId: 'الباتش', saleLineId: 'بند الفاتورة', purchaseLineId: 'بند الفاتورة',
 }
 
 export function errorMessage(e: unknown): string {

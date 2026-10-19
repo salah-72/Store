@@ -7,6 +7,7 @@ import { fmtMoney, fmtQty, priceSuffix } from '../lib/format'
 import { useItem } from '../features/items/api'
 import { Expiry, StatusBadges } from '../features/items/parts'
 import ItemForm from '../features/items/ItemForm'
+import AdjustmentForm from '../features/adjustments/AdjustmentForm'
 
 const costLabel = { PIECE: 'تكلفة القطعة', GRAM: 'تكلفة الكيلو', ML: 'تكلفة اللتر' } as const
 
@@ -14,6 +15,7 @@ export default function ItemDetailPage() {
   const id = Number(useParams().id)
   const { data: item, isPending, error } = useItem(id)
   const [editing, setEditing] = useState(false)
+  const [adjust, setAdjust] = useState<number | null>(null)   // رقم الباتش اللي بنسجّل عليه تالف
 
   if (isPending) return <p className="mu">جاري التحميل...</p>
   if (error) return <div><Link to="/items" className="link-btn">← الأصناف</Link><p className="error">{errorMessage(error)}</p></div>
@@ -50,13 +52,14 @@ export default function ItemDetailPage() {
                 <td className="mu">{fmtQty(item.unit, b.qtyReceived)}</td>
                 <td>{fmtMoney(Number(b.unitCost) * mult)}</td>
                 <td>{fmtMoney(Number(b.unitCost) * b.qtyRemaining)}</td>
-                <td>{b.expired && <Badge tone="danger">منتهي</Badge>}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{b.expired && <Badge tone="danger">منتهي</Badge>} <button className="link-btn" onClick={() => setAdjust(b.id)}>تسوية</button></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
+      {adjust !== null && <Modal title="تسجيل تالف أو منتهي" onClose={() => setAdjust(null)}><AdjustmentForm presetItem={item} presetBatchId={adjust} onDone={() => setAdjust(null)} /></Modal>}
       {editing && <Modal title={`تعديل: ${item.name}`} onClose={() => setEditing(false)}><ItemForm item={item} onDone={() => setEditing(false)} /></Modal>}
     </div>
   )
