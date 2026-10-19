@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { errorMessage } from '../../lib/api'
 import { fmtDate, fmtMoney } from '../../lib/format'
 import { configs, moveLabels, type Kind } from './config'
@@ -33,7 +34,11 @@ export default function StatementTable({ kind, partyId }: { kind: Kind; partyId:
               {data.rows.map((r) => (
                 <tr key={`${r.type}-${r.ref}`}>
                   <td>{fmtDate(r.date)}</td>
-                  <td>{moveLabels[r.type]} <span className="mu" style={{ fontSize: 12 }}>#{r.ref}</span></td>
+                  <td>
+                    {r.type === 'PURCHASE'
+                      ? <Link to={`/purchases/${r.ref}`} className="ok">{moveLabels[r.type]} #{r.ref}</Link>
+                      : <>{moveLabels[r.type]} <span className="mu" style={{ fontSize: 12 }}>#{r.ref}</span></>}
+                  </td>
                   <td>{amt(r.debit)}</td><td>{amt(r.credit)}</td>
                   <td><Balance kind={kind} value={r.balance} /></td>
                   <td className="mu">{r.note}</td>

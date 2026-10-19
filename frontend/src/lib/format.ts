@@ -25,7 +25,7 @@ export const bigUnitName = (unit: Unit) => (unit === 'PIECE' ? 'قطعة' : unit
 // ---- التواريخ (بتوقيت القاهرة) ----
 const cairoYmd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' })
 export const todayYmd = () => cairoYmd.format(new Date())
-export const ymdOf = (iso: string) => iso.slice(0, 10)
+export const ymdOf = (iso: string) => cairoYmd.format(new Date(iso))
 export const fmtDate = (iso: string) => { const [y, m, d] = ymdOf(iso).split('-'); return `${d}/${m}/${y}` }
 export const daysUntil = (iso: string) =>
   Math.round((Date.parse(`${ymdOf(iso)}T00:00:00Z`) - Date.parse(`${todayYmd()}T00:00:00Z`)) / 864e5)

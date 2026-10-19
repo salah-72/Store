@@ -9,6 +9,9 @@ import ItemsPage from './pages/ItemsPage'
 import PartiesPage from './pages/PartiesPage'
 import PartyDetailPage from './pages/PartyDetailPage'
 import ItemDetailPage from './pages/ItemDetailPage'
+import PurchasesPage from './pages/PurchasesPage'
+import PurchaseDetailPage from './pages/PurchaseDetailPage'
+import PurchaseFormPage from './pages/PurchaseFormPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -26,6 +29,10 @@ export default function App() {
                 <Route index element={<DashboardPage />} />
                 <Route path="items" element={<ItemsPage />} />
                 <Route path="items/:id" element={<ItemDetailPage />} />
+                <Route path="purchases" element={<PurchasesPage />} />
+                <Route path="purchases/new" element={<PurchaseFormPage />} />
+                <Route path="purchases/:id" element={<PurchaseDetailPage />} />
+                <Route path="purchases/:id/edit" element={<PurchaseFormPage />} />
                 <Route path="suppliers" element={<PartiesPage kind="suppliers" />} />
                 <Route path="suppliers/:id" element={<PartyDetailPage kind="suppliers" />} />
                 <Route path="customers" element={<PartiesPage kind="customers" />} />

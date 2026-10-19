@@ -37,9 +37,10 @@ export function useParties(kind: Kind, f: PartiesFilter) {
   })
 }
 
-export function useParty(kind: Kind, id: number) {
+export function useParty(kind: Kind, id: number | null) {
   return useQuery({
     queryKey: [kind, 'one', id],
+    enabled: id !== null,
     queryFn: async () => (await api.get(`/${kind}/${id}`)).data.data as Party,
   })
 }
@@ -100,4 +101,9 @@ export function useCreatePayment(kind: Kind) {
       qc.invalidateQueries({ queryKey: ['statement'] })
     },
   })
+}
+
+export async function fetchParties(kind: Kind, search: string): Promise<Party[]> {
+  const r = await api.get(`/${kind}`, { params: { search: search || undefined, limit: 20, active: 'true' } })
+  return r.data.data as Party[]
 }

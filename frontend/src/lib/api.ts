@@ -71,11 +71,30 @@ const messages: Record<string, string> = {
   'Supplier not found': 'المورد مش موجود',
   'Customer not found': 'العميل مش موجود',
   'Payment not found': 'الدفعة مش موجودة',
+  'Purchase not found': 'فاتورة الشراء مش موجودة',
+  'Purchase date cannot be in the future': 'تاريخ الفاتورة مينفعش يكون في المستقبل',
+  'This purchase has returns to the supplier: delete them first': 'الفاتورة دي عليها مرتجعات للمورد، امسح المرتجعات الأول',
+  'This purchase has returns, so its supplier cannot change': 'الفاتورة عليها مرتجعات فمينفعش تغيّر المورد',
+  'Part of this purchase was already sold or returned, so it cannot be deleted': 'جزء من الفاتورة دي اتباع أو اترجّع، فمينفعش تتمسح',
+  'Part of this purchase was already returned to the supplier: keep at least the returned quantity, or delete the return first': 'جزء من الفاتورة اترجّع للمورد: سيب على الأقل الكمية المرتجعة أو امسح المرتجع الأول',
+  'At least one line is required': 'لازم تضيف صنف واحد على الأقل',
   'Two requests collided: please try again': 'حصل تعارض بين طلبين، جرب تاني',
   'The database was busy: please try again': 'السيرفر مشغول، جرب تاني',
   'Something went wrong!': 'حصل خطأ في السيرفر',
 }
+// رسايل فيها أرقام وأسماء متغيرة
+const patterns: [RegExp, (m: RegExpMatchArray) => string][] = [
+  [/^Line (\d+): "(.+)" is already expired \((.+)\)$/, (m) => `السطر ${m[1]}: "${m[2]}" تاريخ انتهائه (${m[3]}) فات`],
+  [/^Line (\d+): "(.+)" has no pack size, send baseQty instead$/, (m) => `السطر ${m[1]}: "${m[2]}" ملوش عبوة محددة، اكتب الكمية مباشرة`],
+  [/^Line (\d+): (.+) packs of "(.+)" is not a whole number of units$/, (m) => `السطر ${m[1]}: ${m[2]} عبوة من "${m[3]}" مش بتطلع عدد صحيح من الوحدات`],
+  [/^Line (\d+): quantity is out of range$/, (m) => `السطر ${m[1]}: الكمية خارج الحد المسموح`],
+  [/^Line (\d+): item (\d+) not found$/, (m) => `السطر ${m[1]}: الصنف مش موجود`],
+  [/^Discount \((.+)\) cannot exceed the invoice subtotal \((.+)\)$/, (m) => `الخصم (${m[1]}) أكبر من إجمالي الفاتورة (${m[2]})`],
+  [/^Cannot take (\d+) units of this item$/, () => 'مينفعش تنقص الكمية دي، جزء منها اتباع أو اترجّع'],
+]
 const fields: Record<string, string> = {
+  supplierId: 'المورد', itemId: 'الصنف', lineTotal: 'إجمالي السطر', baseQty: 'الكمية', packs: 'العبوات',
+  expiryDate: 'تاريخ الانتهاء', paid: 'المدفوع', discount: 'الخصم', lines: 'الأصناف',
   name: 'الاسم', description: 'الوصف', unit: 'الوحدة', price: 'السعر',
   packName: 'اسم العبوة', packSize: 'حجم العبوة', reorderLevel: 'حد الطلب',
   phone: 'التليفون', openingBalance: 'الرصيد الافتتاحي', amount: 'المبلغ', date: 'التاريخ', note: 'الملاحظة',
@@ -87,8 +106,14 @@ export function errorMessage(e: unknown): string {
   const d = e.response.data as { message?: string; errors?: { field: string; message: string }[] } | undefined
   if (d?.errors?.length) {
     const first = d.errors[0]
-    return `بيانات غير صحيحة${first.field ? ` (${fields[first.field] ?? first.field})` : ''}: ${first.message}`
+    const parts = first.field.split('.')
+    const row = parts[0] === 'lines' && parts.length >= 3 ? `السطر ${Number(parts[1]) + 1} - ` : ''
+    const last = parts[parts.length - 1]
+    return `بيانات غير صحيحة${last ? ` (${row}${fields[last] ?? last})` : ''}: ${messages[first.message] ?? first.message}`
   }
   const m = d?.message
-  return m ? (messages[m] ?? m) : 'حصل خطأ غير متوقع'
+  if (!m) return 'حصل خطأ غير متوقع'
+  if (messages[m]) return messages[m]
+  for (const [re, fn] of patterns) { const mm = m.match(re); if (mm) return fn(mm) }
+  return m
 }

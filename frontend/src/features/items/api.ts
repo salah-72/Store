@@ -86,3 +86,8 @@ export function useSetItemActive() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['items'] }); qc.invalidateQueries({ queryKey: ['item'] }) },
   })
 }
+
+export async function fetchItems(search: string): Promise<Item[]> {
+  const r = await api.get('/items', { params: { search: search || undefined, limit: 20, active: 'true' } })
+  return r.data.data as Item[]
+}
