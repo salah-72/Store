@@ -7,7 +7,7 @@ const groups: { title: string; items: { to: string; label: string; soon?: boolea
   { title: 'المخزن', items: [{ to: '/items', label: '📦 الأصناف' }, { to: '/adjustments', label: '🗑️ التالف والمنتهي', soon: true }] },
   { title: 'المعاملات', items: [
     { to: '/sales', label: '💰 المبيعات' }, { to: '/purchases', label: '📥 المشتريات' },
-    { to: '/returns', label: '↩️ المرتجعات', soon: true }, { to: '/payments', label: '💵 الدفعات', soon: true } ] },
+    { to: '/returns', label: '↩️ المرتجعات' }, { to: '/payments', label: '💵 الدفعات' } ] },
   { title: 'الأطراف', items: [{ to: '/customers', label: '👥 العملاء' }, { to: '/suppliers', label: '🚚 الموردين' }] },
   { title: 'المال', items: [{ to: '/expenses', label: '💸 المصاريف', soon: true }, { to: '/reports', label: '📊 التقارير', soon: true }] },
 ]

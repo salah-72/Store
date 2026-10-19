@@ -84,6 +84,11 @@ const messages: Record<string, string> = {
   'This sale has returns, so its customer cannot change': 'الفاتورة عليها مرتجعات فمينفعش تغيّر العميل',
   'This sale has returns, so its lines cannot change: delete the returns first': 'الفاتورة عليها مرتجعات فمينفعش تعدّل أصنافها، امسح المرتجعات الأول',
   'A sale without a customer must be paid in full: choose a customer for a credit sale': 'البيع من غير عميل لازم يتدفع بالكامل. اختار عميل لو البيع آجل',
+  'Sale return not found': 'مرتجع البيع مش موجود',
+  'Purchase return not found': 'مرتجع الشراء مش موجود',
+  'The returned goods were already sold again, so this return cannot be deleted': 'البضاعة المرتجعة اتباعت تاني، فمينفعش تمسح المرتجع',
+  'A return without a customer account must be refunded in cash in full': 'المرتجع من غير عميل لازم يترد كاش بالكامل',
+  'Return date cannot be before the sale date': 'تاريخ المرتجع مينفعش يكون قبل تاريخ الفاتورة',
   'Two requests collided: please try again': 'حصل تعارض بين طلبين، جرب تاني',
   'The database was busy: please try again': 'السيرفر مشغول، جرب تاني',
   'Something went wrong!': 'حصل خطأ في السيرفر',
@@ -97,14 +102,19 @@ const patterns: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^Line (\d+): item (\d+) not found$/, (m) => `السطر ${m[1]}: الصنف مش موجود`],
   [/^Discount \((.+)\) cannot exceed the invoice subtotal \((.+)\)$/, (m) => `الخصم (${m[1]}) أكبر من إجمالي الفاتورة (${m[2]})`],
   [/^Not enough stock of "(.+)": requested (\d+), available (\d+) \(expired batches are not sold\)$/, (m) => `مخزون "${m[1]}" مش كفاية: المطلوب ${m[2]} والمتاح ${m[3]} (بوحدة الصنف الصغيرة، والمنتهي مش بيتباع)`],
+  [/^Only (\d+) of "(.+)" can still be returned (?:from|against) this invoice$/, (m) => `"${m[2]}": اللي ينفع يترجّع من الفاتورة ${m[1]} بس (بالوحدة الصغيرة)`],
+  [/^Cannot return (\d+) of "(.+)": only (\d+) are still in stock \(the rest was sold\)$/, (m) => `"${m[2]}": الباقي في المخزن ${m[3]} بس (بالوحدة الصغيرة)، والباقي اتباع`],
+  [/^Cash refund must be between 0 and the return total \((.+)\)$/, (m) => `الفلوس المرجّعة لازم تكون من 0 لحد قيمة المرتجع (${m[1]})`],
+  [/^Line (\d+) does not belong to (?:sale|purchase) (\d+)$/, () => 'السطر ده مش من الفاتورة دي'],
   [/^Cannot take (\d+) units of this item$/, () => 'مينفعش تنقص الكمية دي، جزء منها اتباع أو اترجّع'],
 ]
 const fields: Record<string, string> = {
   supplierId: 'المورد', itemId: 'الصنف', lineTotal: 'إجمالي السطر', baseQty: 'الكمية', packs: 'العبوات',
   expiryDate: 'تاريخ الانتهاء', paid: 'المدفوع', discount: 'الخصم', lines: 'الأصناف',
+  saleId: 'فاتورة البيع', purchaseId: 'فاتورة الشراء', cashRefund: 'الفلوس المرجّعة',
   name: 'الاسم', description: 'الوصف', unit: 'الوحدة', price: 'السعر',
   packName: 'اسم العبوة', packSize: 'حجم العبوة', reorderLevel: 'حد الطلب',
-  phone: 'التليفون', openingBalance: 'الرصيد الافتتاحي', amount: 'المبلغ', date: 'التاريخ', note: 'الملاحظة',
+  phone: 'التليفون', openingBalance: 'الرصيد الافتتاحي', amount: 'المبلغ', date: 'التاريخ', note: 'الملاحظة', saleLineId: 'بند الفاتورة', purchaseLineId: 'بند الفاتورة',
 }
 
 export function errorMessage(e: unknown): string {

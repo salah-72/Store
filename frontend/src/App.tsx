@@ -16,6 +16,10 @@ import PosPage from './pages/PosPage'
 import SalesPage from './pages/SalesPage'
 import SaleDetailPage from './pages/SaleDetailPage'
 import SaleFormPage from './pages/SaleFormPage'
+import ReturnsPage from './pages/ReturnsPage'
+import ReturnFormPage from './pages/ReturnFormPage'
+import ReturnDetailPage from './pages/ReturnDetailPage'
+import PaymentsPage from './pages/PaymentsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -42,6 +46,10 @@ export default function App() {
                 <Route path="sales/new" element={<Navigate to="/pos" replace />} />
                 <Route path="sales/:id" element={<SaleDetailPage />} />
                 <Route path="sales/:id/edit" element={<SaleFormPage />} />
+                <Route path="returns" element={<ReturnsPage />} />
+                <Route path="returns/new" element={<ReturnFormPage />} />
+                <Route path="returns/:kind/:id" element={<ReturnDetailPage />} />
+                <Route path="payments" element={<PaymentsPage />} />
                 <Route path="suppliers" element={<PartiesPage kind="suppliers" />} />
                 <Route path="suppliers/:id" element={<PartyDetailPage kind="suppliers" />} />
                 <Route path="customers" element={<PartiesPage kind="customers" />} />

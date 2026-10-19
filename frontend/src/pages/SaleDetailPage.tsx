@@ -37,6 +37,7 @@ export default function SaleDetailPage() {
       <PageHeader title={`فاتورة بيع #${s.id}`}>
         <span className="mu">{fmtDate(s.date)}</span>
         <button className="btn outline no-print" onClick={() => window.print()}>🖨️ طباعة</button>
+        <Link to={`/returns/new?kind=sale&invoiceId=${s.id}`} className="btn outline no-print">↩️ مرتجع</Link>
         <Link to={`/sales/${s.id}/edit`} className="btn outline no-print">تعديل</Link>
         <button className="btn danger no-print" onClick={() => setConfirming(true)}>حذف</button>
       </PageHeader>
@@ -92,7 +93,7 @@ export default function SaleDetailPage() {
           <div className="table-wrap">
             <table className="tbl">
               <thead><tr>{['المرتجع', 'التاريخ', 'القيمة', 'كاش مرجّع'].map((h) => <th key={h}>{h}</th>)}</tr></thead>
-              <tbody>{s.returns.map((r) => <tr key={r.id}><td>#{r.id}</td><td>{fmtDate(r.date)}</td><td>{fmtMoney(r.total)}</td><td>{fmtMoney(r.cashRefund)}</td></tr>)}</tbody>
+              <tbody>{s.returns.map((r) => <tr key={r.id}><td><Link to={`/returns/sale/${r.id}`} className="ok">#{r.id}</Link></td><td>{fmtDate(r.date)}</td><td>{fmtMoney(r.total)}</td><td>{fmtMoney(r.cashRefund)}</td></tr>)}</tbody>
             </table>
           </div>
         </div>

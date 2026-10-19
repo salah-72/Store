@@ -25,6 +25,7 @@ export default function PurchaseDetailPage() {
       <Link to="/purchases" className="link-btn">← المشتريات</Link>
       <PageHeader title={`فاتورة شراء #${p.id}`}>
         <span className="mu">{fmtDate(p.date)}</span>
+        <Link to={`/returns/new?kind=purchase&invoiceId=${p.id}`} className="btn outline">↩️ مرتجع</Link>
         <Link to={`/purchases/${p.id}/edit`} className="btn outline">تعديل</Link>
         <button className="btn danger" onClick={() => setConfirming(true)}>حذف</button>
       </PageHeader>
@@ -69,7 +70,7 @@ export default function PurchaseDetailPage() {
               <thead><tr>{['المرتجع', 'التاريخ', 'القيمة', 'كاش مسترد'].map((h) => <th key={h}>{h}</th>)}</tr></thead>
               <tbody>
                 {p.purchaseReturns.map((r) => (
-                  <tr key={r.id}><td>#{r.id}</td><td>{fmtDate(r.date)}</td><td>{fmtMoney(r.total)}</td><td>{fmtMoney(r.cashRefund)}</td></tr>
+                  <tr key={r.id}><td><Link to={`/returns/purchase/${r.id}`} className="ok">#{r.id}</Link></td><td>{fmtDate(r.date)}</td><td>{fmtMoney(r.total)}</td><td>{fmtMoney(r.cashRefund)}</td></tr>
                 ))}
               </tbody>
             </table>

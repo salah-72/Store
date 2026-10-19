@@ -99,6 +99,7 @@ export function useCreatePayment(kind: Kind) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [kind] })
       qc.invalidateQueries({ queryKey: ['statement'] })
+      qc.invalidateQueries({ queryKey: ['payments'] })
     },
   })
 }
