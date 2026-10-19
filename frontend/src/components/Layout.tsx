@@ -31,7 +31,7 @@ export default function Layout() {
           </div>
         ))}
         <small>الحساب</small>
-        <div className="nav-item" style={{ cursor: 'default' }}>👤 {user?.username}</div>
+        <NavLink to="/account" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>👤 {user?.username}</NavLink>
         <button className="nav-item" onClick={logout}>🔐 تسجيل خروج</button>
       </nav>
       <main className="main"><Outlet /></main>
