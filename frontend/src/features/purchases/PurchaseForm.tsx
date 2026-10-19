@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Combobox from '../../components/Combobox'
 import { errorMessage } from '../../lib/api'
-import { bigUnitName, fmtMoney, fmtQty, todayYmd, toBaseQty, toDisplayQty, ymdOf } from '../../lib/format'
+import { bigUnitName, fmtMoney, fmtQty, todayYmd, toBaseQty, toDisplayQty, ymdOf, fmtSigned } from '../../lib/format'
 import { fetchItems, type Item } from '../items/api'
 import { unitName } from '../items/parts'
 import { fetchParties, type Party } from '../parties/api'
@@ -222,7 +222,7 @@ export default function PurchaseForm({ initial, presetSupplier }: { initial?: Pu
       <div className="card" style={{ marginTop: 14 }}>
         <div className="sum">
           <div>المجموع<b>{fmtMoney(subtotal)}</b></div>
-          <div>الخصم<b>{disc ? `-${fmtMoney(disc)}` : '—'}</b></div>
+          <div>الخصم<b>{disc ? fmtSigned('-', disc) : '—'}</b></div>
           <div>الإجمالي<span className="big">{fmtMoney(total)}</span></div>
           <div>
             المدفوع

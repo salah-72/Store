@@ -32,3 +32,11 @@ export const daysUntil = (iso: string) =>
 // السيرفر بيخزن "بدون صلاحية" كتاريخ سنة 3030
 export const hasExpiryDate = (iso: string | null | undefined): iso is string => !!iso && Number(iso.slice(0, 4)) < 3000
 export const NEAR_EXPIRY_DAYS = 90
+
+// ---- حساب التواريخ (yyyy-mm-dd) ----
+export const addDaysYmd = (ymd: string, n: number) => new Date(Date.parse(`${ymd}T00:00:00Z`) + n * 864e5).toISOString().slice(0, 10)
+export const monthStartYmd = (ymd: string) => `${ymd.slice(0, 8)}01`
+export const fmtShortDay = (ymd: string) => `${ymd.slice(8, 10)}/${ymd.slice(5, 7)}`
+
+// مبلغ بعلامة (+/-) : الـ LRI/PDI بيمنعوا العلامة إنها تتقلب لآخر الرقم في الكتابة من اليمين لليسار
+export const fmtSigned = (sign: '-' | '+', v: number | string) => `⁦${sign}${fmtMoney(v)}⁩`

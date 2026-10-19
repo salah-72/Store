@@ -9,7 +9,7 @@ const groups: { title: string; items: { to: string; label: string; soon?: boolea
     { to: '/sales', label: '💰 المبيعات' }, { to: '/purchases', label: '📥 المشتريات' },
     { to: '/returns', label: '↩️ المرتجعات' }, { to: '/payments', label: '💵 الدفعات' } ] },
   { title: 'الأطراف', items: [{ to: '/customers', label: '👥 العملاء' }, { to: '/suppliers', label: '🚚 الموردين' }] },
-  { title: 'المال', items: [{ to: '/expenses', label: '💸 المصاريف' }, { to: '/reports', label: '📊 التقارير', soon: true }] },
+  { title: 'المال', items: [{ to: '/expenses', label: '💸 المصاريف' }, { to: '/reports', label: '📊 التقارير' }] },
 ]
 
 export default function Layout() {

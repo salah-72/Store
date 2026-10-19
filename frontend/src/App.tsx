@@ -20,6 +20,7 @@ import ReturnsPage from './pages/ReturnsPage'
 import ReturnFormPage from './pages/ReturnFormPage'
 import ReturnDetailPage from './pages/ReturnDetailPage'
 import PaymentsPage from './pages/PaymentsPage'
+import ReportsPage from './pages/ReportsPage'
 import ExpensesPage from './pages/ExpensesPage'
 import AdjustmentsPage from './pages/AdjustmentsPage'
 
@@ -52,6 +53,7 @@ export default function App() {
                 <Route path="returns/new" element={<ReturnFormPage />} />
                 <Route path="returns/:kind/:id" element={<ReturnDetailPage />} />
                 <Route path="payments" element={<PaymentsPage />} />
+                <Route path="reports" element={<ReportsPage />} />
                 <Route path="expenses" element={<ExpensesPage />} />
                 <Route path="adjustments" element={<AdjustmentsPage />} />
                 <Route path="suppliers" element={<PartiesPage kind="suppliers" />} />
