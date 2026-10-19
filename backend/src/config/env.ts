@@ -11,6 +11,7 @@ const env = {
   REFRESH_TOKEN_EXPIRED_IN: process.env.REFRESH_TOKEN_EXPIRED_IN,
   ACCESS_TOKEN_EXPIRED_IN: process.env.ACCESS_TOKEN_EXPIRED_IN,
   COOKIE_SAMESITE: process.env.COOKIE_SAMESITE,
+  CLIENT_URL: process.env.CLIENT_URL,
 };
 
 export default env;

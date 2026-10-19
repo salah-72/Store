@@ -20,6 +20,7 @@ import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import env from './config/env';
 
 const app = express();
 
@@ -118,10 +119,13 @@ const limiter = rateLimit({
   },
 });
 
-app.use(helmet());
+app.set('trust proxy', 1);
+
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(
   cors({
-    origin: '*',
+    origin: env.CLIENT_URL!.split(','),
+    credentials: true,
   }),
 );
 app.use(limiter);
