@@ -34,7 +34,7 @@ export function usePayments(f: PaymentsFilter) {
       const r = await api.get("/payments", {
         params: {
           page: f.page,
-          limit: 20,
+          limit: 14,
           type: f.type || undefined,
           from: f.from || undefined,
           to: f.to || undefined,
