@@ -58,6 +58,7 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const compression_1 = __importDefault(require("compression"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
+const env_1 = __importDefault(require("./config/env"));
 const app = (0, express_1.default)();
 const authSwagger = yamljs_1.default.load(path_1.default.join(process.cwd(), 'src/docs/auth.swagger.yaml'));
 const itemSwagger = yamljs_1.default.load(path_1.default.join(process.cwd(), 'src/docs/item.swagger.yaml'));
@@ -127,9 +128,15 @@ const limiter = (0, express_rate_limit_1.default)({
         message: 'too many requests from same ip, try again later',
     },
 });
-app.use((0, helmet_1.default)());
+app.set('trust proxy', 1);
+app.use((req, res, next) => {
+    res.setHeader('x-build', 'cors-fix-1');
+    next();
+});
+app.use((0, helmet_1.default)({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use((0, cors_1.default)({
-    origin: '*',
+    origin: env_1.default.CLIENT_URL.split(','),
+    credentials: true,
 }));
 app.use(limiter);
 app.use(express_1.default.json({ limit: '100kb' }));
