@@ -78,6 +78,12 @@ const messages: Record<string, string> = {
   'Part of this purchase was already sold or returned, so it cannot be deleted': 'جزء من الفاتورة دي اتباع أو اترجّع، فمينفعش تتمسح',
   'Part of this purchase was already returned to the supplier: keep at least the returned quantity, or delete the return first': 'جزء من الفاتورة اترجّع للمورد: سيب على الأقل الكمية المرتجعة أو امسح المرتجع الأول',
   'At least one line is required': 'لازم تضيف صنف واحد على الأقل',
+  'Sale not found': 'فاتورة البيع مش موجودة',
+  'Items not found': 'فيه صنف في الفاتورة مش موجود',
+  'This sale has returns: delete them first': 'الفاتورة دي عليها مرتجعات، امسح المرتجعات الأول',
+  'This sale has returns, so its customer cannot change': 'الفاتورة عليها مرتجعات فمينفعش تغيّر العميل',
+  'This sale has returns, so its lines cannot change: delete the returns first': 'الفاتورة عليها مرتجعات فمينفعش تعدّل أصنافها، امسح المرتجعات الأول',
+  'A sale without a customer must be paid in full: choose a customer for a credit sale': 'البيع من غير عميل لازم يتدفع بالكامل. اختار عميل لو البيع آجل',
   'Two requests collided: please try again': 'حصل تعارض بين طلبين، جرب تاني',
   'The database was busy: please try again': 'السيرفر مشغول، جرب تاني',
   'Something went wrong!': 'حصل خطأ في السيرفر',
@@ -90,6 +96,7 @@ const patterns: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^Line (\d+): quantity is out of range$/, (m) => `السطر ${m[1]}: الكمية خارج الحد المسموح`],
   [/^Line (\d+): item (\d+) not found$/, (m) => `السطر ${m[1]}: الصنف مش موجود`],
   [/^Discount \((.+)\) cannot exceed the invoice subtotal \((.+)\)$/, (m) => `الخصم (${m[1]}) أكبر من إجمالي الفاتورة (${m[2]})`],
+  [/^Not enough stock of "(.+)": requested (\d+), available (\d+) \(expired batches are not sold\)$/, (m) => `مخزون "${m[1]}" مش كفاية: المطلوب ${m[2]} والمتاح ${m[3]} (بوحدة الصنف الصغيرة، والمنتهي مش بيتباع)`],
   [/^Cannot take (\d+) units of this item$/, () => 'مينفعش تنقص الكمية دي، جزء منها اتباع أو اترجّع'],
 ]
 const fields: Record<string, string> = {

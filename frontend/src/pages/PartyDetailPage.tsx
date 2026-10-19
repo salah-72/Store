@@ -28,6 +28,7 @@ export default function PartyDetailPage({ kind }: { kind: Kind }) {
         {!p.isActive && <Badge tone="gray">معطّل</Badge>}
         {p.phone && <span className="mu" dir="ltr">{p.phone}</span>}
         {kind === 'suppliers' && <Link className="btn outline" to={`/purchases/new?supplierId=${id}`}>+ فاتورة شراء</Link>}
+        {kind === 'customers' && <Link className="btn outline" to={`/pos?customerId=${id}`}>+ فاتورة بيع</Link>}
         <button className="btn" onClick={() => setDialog('pay')}>{kind === 'customers' ? 'تسجيل دفعة' : 'دفعة للمورد'}</button>
         <button className="btn outline" onClick={() => setDialog('edit')}>تعديل</button>
       </PageHeader>

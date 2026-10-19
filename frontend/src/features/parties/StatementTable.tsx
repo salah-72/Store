@@ -35,8 +35,8 @@ export default function StatementTable({ kind, partyId }: { kind: Kind; partyId:
                 <tr key={`${r.type}-${r.ref}`}>
                   <td>{fmtDate(r.date)}</td>
                   <td>
-                    {r.type === 'PURCHASE'
-                      ? <Link to={`/purchases/${r.ref}`} className="ok">{moveLabels[r.type]} #{r.ref}</Link>
+                    {r.type === 'PURCHASE' || r.type === 'SALE'
+                      ? <Link to={`/${r.type === 'SALE' ? 'sales' : 'purchases'}/${r.ref}`} className="ok">{moveLabels[r.type]} #{r.ref}</Link>
                       : <>{moveLabels[r.type]} <span className="mu" style={{ fontSize: 12 }}>#{r.ref}</span></>}
                   </td>
                   <td>{amt(r.debit)}</td><td>{amt(r.credit)}</td>

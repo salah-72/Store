@@ -3,10 +3,10 @@ import { useAuth } from '../auth/AuthContext'
 
 // الأقسام زي التصميم. اللي "soon" لسه ما اتبناش.
 const groups: { title: string; items: { to: string; label: string; soon?: boolean }[] }[] = [
-  { title: 'الرئيسية', items: [{ to: '/', label: '🏠 لوحة التحكم' }, { to: '/pos', label: '🧾 الكاشير', soon: true }] },
+  { title: 'الرئيسية', items: [{ to: '/', label: '🏠 لوحة التحكم' }, { to: '/pos', label: '🧾 الكاشير' }] },
   { title: 'المخزن', items: [{ to: '/items', label: '📦 الأصناف' }, { to: '/adjustments', label: '🗑️ التالف والمنتهي', soon: true }] },
   { title: 'المعاملات', items: [
-    { to: '/sales', label: '💰 المبيعات', soon: true }, { to: '/purchases', label: '📥 المشتريات' },
+    { to: '/sales', label: '💰 المبيعات' }, { to: '/purchases', label: '📥 المشتريات' },
     { to: '/returns', label: '↩️ المرتجعات', soon: true }, { to: '/payments', label: '💵 الدفعات', soon: true } ] },
   { title: 'الأطراف', items: [{ to: '/customers', label: '👥 العملاء' }, { to: '/suppliers', label: '🚚 الموردين' }] },
   { title: 'المال', items: [{ to: '/expenses', label: '💸 المصاريف', soon: true }, { to: '/reports', label: '📊 التقارير', soon: true }] },

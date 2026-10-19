@@ -109,3 +109,30 @@ body { background: var(--bg); color: var(--tx); font-size: 14px; margin: 0; }
   .big { font-size: 22px; font-weight: 700; }
   .check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 }
+
+@layer components {
+  /* ----- الكاشير ----- */
+  .pos { display: grid; grid-template-columns: 1fr 440px; gap: 14px; align-items: start; }
+  .pos-cart { position: sticky; top: 14px; }
+  .pg { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 10px; margin-top: 12px; }
+  .p { font: inherit; color: inherit; text-align: start; display: flex; flex-direction: column; gap: 2px; padding: 10px; border: 1px solid var(--bd); border-radius: 10px; background: var(--cd); cursor: pointer; }
+  .p:hover:not(:disabled) { border-color: var(--br); background: var(--bs); }
+  .p b { font-size: 14px; }
+  .p span { color: var(--br); font-weight: 600; font-size: 13px; }
+  .p small { font-size: 12px; }
+  .p.off { opacity: .55; cursor: not-allowed; }
+  .cart-line { border: 1px solid var(--bd); border-radius: 10px; padding: 9px 10px; margin-bottom: 8px; background: var(--bg); }
+  .cart-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 6px; }
+  .cart-grid select.input { padding-inline: 4px; }
+  .pos-cart input[type=date] { min-width: 150px; }
+  .cart-grid .input { padding: 5px 7px; }
+  @media (max-width: 1100px) { .pos { grid-template-columns: 1fr; } .pos-cart { position: static; } }
+}
+/* ----- الطباعة ----- */
+@media print {
+  .sidebar, .no-print { display: none !important; }
+  .app { display: block; }
+  .main { padding: 0 !important; }
+  :root { --bg: #fff !important; --cd: #fff !important; --tx: #000 !important; --mu: #444 !important; --bd: #999 !important; }
+  body { background: #fff; color: #000; }
+}
