@@ -121,6 +121,11 @@ const limiter = rateLimit({
 
 app.set('trust proxy', 1);
 
+app.use((req, res, next) => {
+  res.setHeader('x-build', 'cors-fix-1');
+  next();
+});
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(
   cors({
