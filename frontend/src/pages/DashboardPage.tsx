@@ -257,7 +257,7 @@ export default function DashboardPage() {
   return (
     <Shell>
       <Header
-        title={`أهلاً ${user?.username ?? ""} 👋`}
+        title={`أهلاً ${user?.username ?? ""} `}
         subtitle="ملخص النهارده والشهر"
         actions={
           <>
