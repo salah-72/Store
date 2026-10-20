@@ -56,7 +56,7 @@ export default function LoginPage() {
             <Leaf size={28} />
           </span>
           <div>
-            <h2 className="text-xl font-bold m-0">مبيدات الهندسة</h2>
+            <h2 className="text-xl font-bold m-0">جرين هورس</h2>
             <p className="m-0 mt-1 text-sm text-[var(--mu)] font-medium">
               سجّل دخولك لإدارة المحل
             </p>

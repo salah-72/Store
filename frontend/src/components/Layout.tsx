@@ -37,23 +37,23 @@ const groups: { title: string; items: Item[] }[] = [
     title: "المخزن",
     items: [
       { to: "/items", label: "الأصناف", icon: Package },
-      { to: "/adjustments", label: "التالف والمنتهي", icon: PackageX },
+      { to: "/suppliers", label: "الموردين", icon: Truck },
+      { to: "/purchases", label: "المشتريات", icon: ShoppingCart },
     ],
   },
   {
     title: "المعاملات",
     items: [
+      { to: "/customers", label: "العملاء", icon: Users },
       { to: "/sales", label: "المبيعات", icon: Banknote },
-      { to: "/purchases", label: "المشتريات", icon: ShoppingCart },
-      { to: "/returns", label: "المرتجعات", icon: Undo2 },
       { to: "/payments", label: "الدفعات", icon: CreditCard },
     ],
   },
   {
     title: "الأطراف",
     items: [
-      { to: "/customers", label: "العملاء", icon: Users },
-      { to: "/suppliers", label: "الموردين", icon: Truck },
+      { to: "/returns", label: "المرتجعات", icon: Undo2 },
+      { to: "/adjustments", label: "التالف والمنتهي", icon: PackageX },
     ],
   },
   {
@@ -159,7 +159,7 @@ export default function Layout() {
           <span className="w-9 h-9 shrink-0 flex items-center justify-center rounded-[10px] bg-white/10 text-white">
             <Sprout size={20} />
           </span>
-          <h1 className="m-0 text-base font-bold truncate">مبيدات الهندسة</h1>
+          <h1 className="m-0 text-base font-bold truncate">جرين هورس</h1>
         </div>
 
         <nav
