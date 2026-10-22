@@ -24,6 +24,10 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import Confirm from "../components/Confirm";
+import {
+  PrintInvoiceButton,
+  SaleInvoicePrint,
+} from "../features/sales/SaleInvoice";
 import { errorMessage } from "../lib/api";
 import { fmtDate, fmtMoney, fmtQty, hasExpiryDate } from "../lib/format";
 import { useDeleteSale, useSale } from "../features/sales/api";
@@ -103,15 +107,15 @@ export default function SaleDetailPage() {
   const del = useDeleteSale();
   const [confirming, setConfirming] = useState(false);
 
-  // بعد "حفظ وطباعة" بنفتح نافذة الطباعة أول ما الفاتورة تظهر
+  // التحكم في الطباعة التلقائية للشكل الجديد بعد زر "حفظ وطباعة"
   const wantsPrint = params.get("print") === "1";
+  const [autoPrinting, setAutoPrinting] = useState(false);
+
   useEffect(() => {
-    if (!wantsPrint || !s) return;
-    const t = setTimeout(() => {
-      window.print();
+    if (wantsPrint && s) {
+      setAutoPrinting(true);
       setParams({}, { replace: true });
-    }, 300);
-    return () => clearTimeout(t);
+    }
   }, [wantsPrint, s, setParams]);
 
   if (isPending)
@@ -179,14 +183,12 @@ export default function SaleDetailPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 no-print">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className={outlineBtn}
-          >
+          {/* زر الطباعة المنظمة الجديد */}
+          <PrintInvoiceButton sale={s} className={outlineBtn}>
             <Printer size={16} />
             طباعة
-          </button>
+          </PrintInvoiceButton>
+
           <Link
             to={`/returns/new?kind=sale&invoiceId=${s.id}`}
             className={outlineBtn}
@@ -413,6 +415,7 @@ export default function SaleDetailPage() {
         </div>
       )}
 
+      {/* نافذة التأكيد قبل الحذف */}
       {confirming && (
         <Confirm
           title="حذف فاتورة البيع"
@@ -424,6 +427,11 @@ export default function SaleDetailPage() {
             navigate("/sales", { replace: true });
           }}
         />
+      )}
+
+      {/* مشغل الطباعة التلقائية للشكل الجديد قادمين من الكاشير */}
+      {autoPrinting && (
+        <SaleInvoicePrint sale={s} onDone={() => setAutoPrinting(false)} />
       )}
     </div>
   );
