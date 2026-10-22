@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { Printer } from "lucide-react";
 import { fmtDate } from "../../lib/format";
@@ -237,16 +243,17 @@ export function InvoiceSheet({
 }
 
 /* ---------- الطباعة / حفظ PDF ---------- */
-// بيرسم الفاتورة في عنصر مخصوص جوه الـ body، بيخفي باقي الصفحة وقت الطباعة بس، وبيفتح نافذة الطباعة.
-// من نافذة الطباعة اختار "حفظ كـ PDF" لو عايز ملف.
-export function SaleInvoicePrint({
+// الفاتورة بتتحط في عنصر مخصوص جوه الـ body (مخفي على الشاشة) وبيفضل موجود طول ما الصفحة مفتوحة،
+// وقت الطباعة بس بيتخفى باقي الصفحة. مهم: ما بنشيلوش بعد afterprint، لأن الموبايل بيطلق الحدث ده
+// على طول والـ print preview بيتبني بعدها، فلو شلناه الطباعة بتطلع فاضية.
+
+/** بيرسم الفاتورة المخفية. حطه مرة واحدة في الصفحة (PrintInvoiceButton بيعمل كده). */
+export function InvoicePrintHost({
   sale,
   customerBalance,
-  onDone,
 }: {
   sale: SaleDetail;
   customerBalance?: number | null;
-  onDone: () => void;
 }) {
   const [host] = useState(() => {
     const el = document.createElement("div");
@@ -261,32 +268,6 @@ export function SaleInvoicePrint({
     };
   }, [host]);
 
-  useEffect(() => {
-    const prevTitle = document.title;
-    document.title = `فاتورة-${sale.id}`; // اسم ملف الـ PDF
-    let cancelled = false;
-    const finish = () => {
-      document.title = prevTitle;
-      if (!cancelled) onDone();
-    };
-    window.addEventListener("afterprint", finish, { once: true });
-    (async () => {
-      try {
-        await document.fonts?.ready;
-      } catch {
-        /* مش مشكلة */
-      }
-      await new Promise((r) => setTimeout(r, 60));
-      if (!cancelled) window.print();
-    })();
-    return () => {
-      cancelled = true;
-      window.removeEventListener("afterprint", finish);
-      document.title = prevTitle;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return createPortal(
     <>
       <style>{CSS}</style>
@@ -294,6 +275,23 @@ export function SaleInvoicePrint({
     </>,
     host,
   );
+}
+
+let titleBackup: string | null = null;
+
+/** بيفتح نافذة الطباعة. لازم يتنادى مباشرة من ضغطة المستخدم (من غير await قبله) عشان الموبايل يقبله. */
+export function printInvoiceNow(saleId: number) {
+  if (titleBackup === null) titleBackup = document.title;
+  document.title = `فاتورة-${saleId}`; // اسم ملف الـ PDF
+  window.print();
+}
+
+/** بيرجّع عنوان الصفحة بعد الطباعة (أو لما الصفحة تتقفل). */
+export function restoreTitle() {
+  if (titleBackup !== null) {
+    document.title = titleBackup;
+    titleBackup = null;
+  }
 }
 
 /* ---------- زرار جاهز تحطه في صفحة الفاتورة ---------- */
@@ -309,29 +307,58 @@ export function PrintInvoiceButton({
   /** يفتح نافذة الطباعة أول ما الصفحة تفتح (بعد "حفظ وطباعة") */
   autoPrint?: boolean;
   className?: string;
+  /** لو حطيت children بتحل مكان الأيقونة والنص كلهم (حط الأيقونة بنفسك لو عايزها) */
   children?: ReactNode;
 }) {
-  const [printing, setPrinting] = useState(autoPrint);
+  const saleId = sale.id;
+
+  useEffect(() => {
+    window.addEventListener("afterprint", restoreTitle);
+    return () => {
+      window.removeEventListener("afterprint", restoreTitle);
+      restoreTitle();
+    };
+  }, []);
+
+  // الطباعة التلقائية بعد "حفظ وطباعة": بنستنى الخط يحمّل وبعدين نطبع.
+  // (على الموبايل المتصفح ممكن يمنع الطباعة من غير ضغطة، فالزرار موجود كبديل)
+  const auto = useRef(autoPrint);
+  useEffect(() => {
+    if (!auto.current) return;
+    auto.current = false;
+    let cancelled = false;
+    (async () => {
+      try {
+        await document.fonts?.ready;
+      } catch {
+        /* مش مشكلة */
+      }
+      await new Promise((r) => setTimeout(r, 60));
+      if (!cancelled) printInvoiceNow(saleId);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [saleId]);
+
   return (
     <>
       <button
         type="button"
-        onClick={() => setPrinting(true)}
+        onClick={() => printInvoiceNow(saleId)}
         className={
           className ??
           "font-[inherit] px-4 py-2 rounded-[8px] border border-[var(--br)] bg-transparent text-[var(--br)] text-sm font-semibold cursor-pointer flex items-center gap-2 hover:bg-[var(--bs)] transition-colors"
         }
       >
-        <Printer size={17} />
-        {children ?? "طباعة / PDF"}
+        {children ?? (
+          <>
+            <Printer size={17} />
+            طباعة / PDF
+          </>
+        )}
       </button>
-      {printing && (
-        <SaleInvoicePrint
-          sale={sale}
-          customerBalance={customerBalance}
-          onDone={() => setPrinting(false)}
-        />
-      )}
+      <InvoicePrintHost sale={sale} customerBalance={customerBalance} />
     </>
   );
 }

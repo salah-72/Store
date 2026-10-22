@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Link,
   useNavigate,
@@ -24,10 +24,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import Confirm from "../components/Confirm";
-import {
-  PrintInvoiceButton,
-  SaleInvoicePrint,
-} from "../features/sales/SaleInvoice";
+import { PrintInvoiceButton } from "../features/sales/SaleInvoice";
 import { errorMessage } from "../lib/api";
 import { fmtDate, fmtMoney, fmtQty, hasExpiryDate } from "../lib/format";
 import { useDeleteSale, useSale } from "../features/sales/api";
@@ -107,16 +104,11 @@ export default function SaleDetailPage() {
   const del = useDeleteSale();
   const [confirming, setConfirming] = useState(false);
 
-  // التحكم في الطباعة التلقائية للشكل الجديد بعد زر "حفظ وطباعة"
-  const wantsPrint = params.get("print") === "1";
-  const [autoPrinting, setAutoPrinting] = useState(false);
-
+  // بعد "حفظ وطباعة" (?print=1) الزرار بيفتح الطباعة لوحده، وبنشيل الباراميتر من الرابط
+  const wantsPrint = useRef(params.get("print") === "1").current;
   useEffect(() => {
-    if (wantsPrint && s) {
-      setAutoPrinting(true);
-      setParams({}, { replace: true });
-    }
-  }, [wantsPrint, s, setParams]);
+    if (params.get("print") === "1") setParams({}, { replace: true });
+  }, [params, setParams]);
 
   if (isPending)
     return (
@@ -184,7 +176,11 @@ export default function SaleDetailPage() {
 
         <div className="flex flex-wrap items-center gap-2 no-print">
           {/* زر الطباعة المنظمة الجديد */}
-          <PrintInvoiceButton sale={s} className={outlineBtn}>
+          <PrintInvoiceButton
+            sale={s}
+            autoPrint={wantsPrint}
+            className={outlineBtn}
+          >
             <Printer size={16} />
             طباعة
           </PrintInvoiceButton>
@@ -427,11 +423,6 @@ export default function SaleDetailPage() {
             navigate("/sales", { replace: true });
           }}
         />
-      )}
-
-      {/* مشغل الطباعة التلقائية للشكل الجديد قادمين من الكاشير */}
-      {autoPrinting && (
-        <SaleInvoicePrint sale={s} onDone={() => setAutoPrinting(false)} />
       )}
     </div>
   );
