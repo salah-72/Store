@@ -3,18 +3,25 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { Leaf, User, Lock, Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { errorMessage } from "../lib/api";
+import { waitUntilAwake } from "../lib/wakwApi";
+
+// جذر الباك (من غير /api ومن غير / في الآخر) عشان /health موجود على الجذر
+const API_ROOT = String(import.meta.env.VITE_API_URL ?? "")
+  .replace(/\/api\/?$/, "")
+  .replace(/\/$/, "");
 
 const inputClass =
   "font-[inherit] w-full py-2.5 pr-10 pl-3 border border-[var(--bd)] rounded-[8px] bg-[var(--bg)] text-[var(--tx)] text-sm outline-none focus:border-[var(--br)] focus:bg-[var(--cd)] transition-colors";
 
 export default function LoginPage() {
-  const { login, status } = useAuth();
+  const { login, status, waking: appWaking } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [waking, setWaking] = useState(false);
 
   if (status === "authed") return <Navigate to="/" replace />;
 
@@ -23,14 +30,20 @@ export default function LoginPage() {
     setError("");
     setBusy(true);
     try {
+      // السيرفر ممكن ينام وانت قاعد على الصفحة: نستنى يصحى قبل ما نبعت الدخول
+      await waitUntilAwake(API_ROOT, { onWaiting: () => setWaking(true) });
+      setWaking(false);
       await login(username.trim(), password);
       navigate("/", { replace: true });
     } catch (err) {
       setError(errorMessage(err));
     } finally {
       setBusy(false);
+      setWaking(false);
     }
   }
+
+  const isWaking = waking || appWaking;
 
   return (
     <div
@@ -124,6 +137,15 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {isWaking && (
+          <p
+            role="status"
+            className="m-0 rounded-[8px] border border-[var(--bd)] bg-[var(--ws)] px-4 py-2.5 text-sm text-[var(--wa)] font-semibold"
+          >
+            السيرفر بيصحى، استنى حوالي دقيقة...
+          </p>
+        )}
+
         {error && (
           <p
             role="alert"
@@ -141,7 +163,7 @@ export default function LoginPage() {
           {busy ? (
             <>
               <Loader2 size={17} className="animate-spin" />
-              جاري الدخول...
+              {waking ? "السيرفر بيصحى..." : "جاري الدخول..."}
             </>
           ) : (
             <>
