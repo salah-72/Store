@@ -138,6 +138,8 @@ app.get('/', async (req, res) => {
   res.send('welcome');
 });
 
+app.get('/health', (_req, res) => res.json({ ok: true }));
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use('/auth', authRouter);
