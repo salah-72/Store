@@ -142,7 +142,15 @@ export default function LoginPage() {
             role="status"
             className="m-0 rounded-[8px] border border-[var(--bd)] bg-[var(--ws)] px-4 py-2.5 text-sm text-[var(--wa)] font-semibold"
           >
-            السيرفر بيصحى، استنى حوالي دقيقة...
+            السيرفر بيصحى، استنى حوالي دقيقة...{" "}
+            <a
+              href={`${API_ROOT}/health`}
+              target="_blank"
+              rel="noreferrer"
+              className="underline"
+            >
+              لو اتأخر اضغط هنا
+            </a>
           </p>
         )}
 
