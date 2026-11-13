@@ -119,3 +119,65 @@ export async function fetchItems(search: string): Promise<Item[]> {
   });
   return r.data.data as Item[];
 }
+
+export interface ItemSalesSummary {
+  invoices: number;
+  soldQty: number;
+  soldRevenue: number;
+  soldCost: number;
+  returnedQty: number;
+  returnedRevenue: number;
+  returnedCost: number;
+  netQty: number;
+  netRevenue: number;
+  netProfit: number;
+}
+export interface ItemSalesLine {
+  id: number;
+  saleId: number;
+  date: string;
+  customer: { id: number; name: string } | null;
+  baseQty: number;
+  unitPrice: string | number;
+  lineTotal: string | number;
+  cost: number;
+  profit: number;
+  belowCost: boolean;
+  returnedQty: number;
+  returnedTotal: number;
+}
+export interface ItemSalesFilter {
+  page: number;
+  from: string;
+  to: string;
+}
+
+// سجل مبيعات صنف: كل الفواتير اللي اتباع فيها + إجماليات الفترة
+export function useItemSales(id: number | null, f: ItemSalesFilter) {
+  return useQuery({
+    queryKey: ["item-sales", id, f],
+    enabled: id !== null,
+    queryFn: async () => {
+      const r = await api.get(`/items/${id}/sales`, {
+        params: {
+          page: f.page,
+          limit: 15,
+          from: f.from || undefined,
+          to: f.to || undefined,
+        },
+      });
+      return {
+        item: r.data.data.item as {
+          id: number;
+          name: string;
+          unit: Unit;
+          priceBasis: number;
+        },
+        summary: r.data.data.summary as ItemSalesSummary,
+        lines: r.data.data.lines as ItemSalesLine[],
+        meta: r.data.meta as PageMeta,
+      };
+    },
+    placeholderData: keepPreviousData,
+  });
+}

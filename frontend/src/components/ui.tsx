@@ -68,7 +68,6 @@ function getPageRange(current: number, totalPages: number) {
 export function Pager({
   page,
   totalPages,
-  total,
   onPage,
 }: {
   page: number;

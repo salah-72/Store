@@ -6,6 +6,7 @@ import {
   updateItem,
   listItem,
   getItem,
+  listItemSales,
 } from './item.controller';
 import { validateRequest } from '@/common/middlewares/validation';
 import {
@@ -14,6 +15,7 @@ import {
   updateItemSchema,
   setItemStatusSchema,
   listItemsQuery,
+  itemSalesQuery,
 } from './item.validation';
 
 const router = Router();
@@ -23,6 +25,11 @@ router.use(protect);
 router.get('/', validateRequest({ query: listItemsQuery }), listItem);
 router.post('/', validateRequest({ body: createItemSchema }), createItem);
 router.get('/:id', validateRequest({ params: itemIdParam }), getItem);
+router.get(
+  '/:id/sales',
+  validateRequest({ params: itemIdParam, query: itemSalesQuery }),
+  listItemSales,
+);
 router.patch(
   '/:id',
   validateRequest({ params: itemIdParam, body: updateItemSchema }),

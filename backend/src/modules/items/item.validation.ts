@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { pagination } from '../../common/utils/schemas';
+import { pagination, ymd } from '../../common/utils/schemas';
 
 const fields = {
   name: z.string().trim().min(1, 'Name is required').max(150),
@@ -52,3 +52,16 @@ export type CreateItemInput = z.infer<typeof createItemSchema>;
 export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 export type SetItemStatusInput = z.infer<typeof setItemStatusSchema>;
 export type ListItemsQuery = z.infer<typeof listItemsQuery>;
+
+// سجل مبيعات صنف: سطور الفواتير اللي اتباع فيها، بفلتر تاريخ اختياري
+export const itemSalesQuery = pagination
+  .extend({
+    from: ymd.optional(),
+    to: ymd.optional(),
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: '"from" must not be after "to"',
+    path: ['from'],
+  });
+
+export type ItemSalesQuery = z.infer<typeof itemSalesQuery>;
