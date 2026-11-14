@@ -7,6 +7,7 @@ import {
   listItem,
   getItem,
   listItemSales,
+  listItemPurchases,
 } from './item.controller';
 import { validateRequest } from '@/common/middlewares/validation';
 import {
@@ -16,6 +17,7 @@ import {
   setItemStatusSchema,
   listItemsQuery,
   itemSalesQuery,
+  itemPurchasesQuery,
 } from './item.validation';
 
 const router = Router();
@@ -29,6 +31,11 @@ router.get(
   '/:id/sales',
   validateRequest({ params: itemIdParam, query: itemSalesQuery }),
   listItemSales,
+);
+router.get(
+  '/:id/purchases',
+  validateRequest({ params: itemIdParam, query: itemPurchasesQuery }),
+  listItemPurchases,
 );
 router.patch(
   '/:id',

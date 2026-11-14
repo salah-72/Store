@@ -8,6 +8,7 @@ import type {
   UpdateItemInput,
   ListItemsQuery,
   ItemSalesQuery,
+  ItemPurchasesQuery,
 } from './item.validation';
 
 export const createItem = catchAsync(async (req: Request, res: Response) => {
@@ -52,6 +53,19 @@ export const listItemSales = catchAsync(async (req: Request, res: Response) => {
   q.page = Number(q.page) || 1;
   q.limit = Number(q.limit) || 20;
   const { item, summary, lines, total } = await service.listItemSales(id, q);
+  res.json({
+    success: true,
+    data: { item, summary, lines },
+    meta: pageMeta(total, q.page, q.limit),
+  });
+});
+
+export const listItemPurchases = catchAsync(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const q = req.query as unknown as ItemPurchasesQuery;
+  q.page = Number(q.page) || 1;
+  q.limit = Number(q.limit) || 20;
+  const { item, summary, lines, total } = await service.listItemPurchases(id, q);
   res.json({
     success: true,
     data: { item, summary, lines },

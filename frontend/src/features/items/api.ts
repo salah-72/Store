@@ -181,3 +181,56 @@ export function useItemSales(id: number | null, f: ItemSalesFilter) {
     placeholderData: keepPreviousData,
   });
 }
+
+export interface ItemPurchasesSummary {
+  invoices: number;
+  boughtQty: number;
+  boughtCost: number;
+  returnedQty: number;
+  returnedValue: number;
+  netQty: number;
+  netCost: number;
+}
+export interface ItemPurchaseLine {
+  id: number;
+  purchaseId: number;
+  date: string;
+  supplier: { id: number; name: string };
+  baseQty: number;
+  unitCost: string | number;
+  lineTotal: string | number;
+  expiryDate: string;
+  hasExpiry: boolean;
+  returnedQty: number;
+  returnedTotal: number;
+}
+
+// سجل مشتريات صنف: كل فواتير الشراء اللي دخل فيها + إجماليات الفترة
+export function useItemPurchases(id: number | null, f: ItemSalesFilter) {
+  return useQuery({
+    queryKey: ["item-purchases", id, f],
+    enabled: id !== null,
+    queryFn: async () => {
+      const r = await api.get(`/items/${id}/purchases`, {
+        params: {
+          page: f.page,
+          limit: 15,
+          from: f.from || undefined,
+          to: f.to || undefined,
+        },
+      });
+      return {
+        item: r.data.data.item as {
+          id: number;
+          name: string;
+          unit: Unit;
+          priceBasis: number;
+        },
+        summary: r.data.data.summary as ItemPurchasesSummary,
+        lines: r.data.data.lines as ItemPurchaseLine[],
+        meta: r.data.meta as PageMeta,
+      };
+    },
+    placeholderData: keepPreviousData,
+  });
+}

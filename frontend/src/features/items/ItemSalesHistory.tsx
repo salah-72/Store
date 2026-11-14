@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Receipt, Undo2, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Undo2, X } from "lucide-react";
 import { Pager } from "../../components/ui";
 import { fmtDate, fmtMoney, fmtQty } from "../../lib/format";
 import type { Unit } from "../../lib/format";
 import { useItemSales } from "./api";
 
-const dateInputClass =
+export const dateInputClass =
   "font-[inherit] px-3 py-2 border border-[var(--bd)] rounded-[8px] bg-[var(--bg)] text-[var(--tx)] text-sm outline-none focus:border-[var(--br)] focus:bg-[var(--cd)] transition-colors";
 
 const headers = [
@@ -20,7 +20,7 @@ const headers = [
   "مرتجع",
 ];
 
-function Stat({
+export function Stat({
   label,
   value,
   tone,
@@ -36,8 +36,8 @@ function Stat({
         ? "text-[var(--br)]"
         : "text-[var(--tx)]";
   return (
-    <div className="bg-[var(--cd)] border border-[var(--bd)] rounded-[10px] shadow-xs px-4 py-3">
-      <div className="text-xs font-medium text-[var(--mu)] mb-1">{label}</div>
+    <div className="bg-[var(--cd)] border border-[var(--bd)] rounded-[10px] shadow-xs px-3.5 py-2.5">
+      <div className="text-xs font-medium text-[var(--mu)] mb-0.5">{label}</div>
       <div className={`text-base font-bold tabular-nums ${color}`}>{value}</div>
     </div>
   );
@@ -50,6 +50,7 @@ export default function ItemSalesHistory({
   itemId: number;
   unit: Unit;
 }) {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState({ page: 1, from: "", to: "" });
   const { data, isLoading, isError, isFetching } = useItemSales(itemId, filter);
   const set = (p: Partial<typeof filter>) =>
@@ -60,12 +61,8 @@ export default function ItemSalesHistory({
   const suffix = unit === "PIECE" ? "للقطعة" : unit === "GRAM" ? "للكيلو" : "للتر";
 
   return (
-    <section className="mt-8">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-        <h3 className="flex items-center gap-2 text-base font-bold m-0">
-          <Receipt size={18} className="text-[var(--br)]" />
-          سجل المبيعات
-        </h3>
+    <section>
+      <div className="flex flex-wrap items-center justify-end gap-3 mb-3">
         <div className="flex flex-wrap items-end gap-2">
           <label className="flex items-center gap-2 text-xs font-medium text-[var(--mu)]">
             من
@@ -100,7 +97,7 @@ export default function ItemSalesHistory({
       </div>
 
       {s && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(122px,1fr))] gap-2.5 mb-3">
           <Stat label="عدد الفواتير" value={String(s.invoices)} />
           <Stat label="الكمية المباعة" value={fmtQty(unit, s.soldQty)} />
           <Stat label="إيراد المبيعات" value={fmtMoney(s.soldRevenue)} />
@@ -161,11 +158,13 @@ export default function ItemSalesHistory({
               data.lines.map((l) => (
                 <tr
                   key={l.id}
-                  className="border-b border-[var(--bd)] last:border-b-0 hover:bg-[var(--bs)] transition-colors"
+                  onClick={() => navigate(`/sales/${l.saleId}`)}
+                  className="border-b border-[var(--bd)] last:border-b-0 hover:bg-[var(--bs)] transition-colors cursor-pointer"
                 >
                   <td className="px-4 py-3">
                     <Link
                       to={`/sales/${l.saleId}`}
+                      onClick={(e) => e.stopPropagation()}
                       className="font-bold text-[var(--br)] no-underline hover:underline tabular-nums"
                     >
                       #{l.saleId}

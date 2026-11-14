@@ -65,3 +65,7 @@ export const itemSalesQuery = pagination
   });
 
 export type ItemSalesQuery = z.infer<typeof itemSalesQuery>;
+
+// نفس فلاتر سجل المبيعات (صفحة + من/إلى)
+export const itemPurchasesQuery = itemSalesQuery;
+export type ItemPurchasesQuery = ItemSalesQuery;

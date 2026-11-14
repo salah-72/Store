@@ -18,7 +18,7 @@ import { fmtMoney, fmtQty, priceSuffix } from "../lib/format";
 import { useItem } from "../features/items/api";
 import { Expiry, StatusBadges } from "../features/items/parts";
 import ItemForm from "../features/items/ItemForm";
-import ItemSalesHistory from "../features/items/ItemSalesHistory";
+import ItemHistory from "../features/items/ItemHistory";
 import AdjustmentForm from "../features/adjustments/AdjustmentForm";
 
 const costLabel = {
@@ -358,8 +358,8 @@ export default function ItemDetailPage() {
         </table>
       </div>
 
-      {/* سجل المبيعات */}
-      <ItemSalesHistory itemId={item.id} unit={item.unit} />
+      {/* سجل المبيعات / المشتريات */}
+      <ItemHistory itemId={item.id} unit={item.unit} />
 
       {/* النوافذ المنبثقة */}
       {adjust !== null && (

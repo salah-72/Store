@@ -1,5 +1,6 @@
 import {
   CreateItemInput,
+  ItemPurchasesQuery,
   ItemSalesQuery,
   ListItemsQuery,
   UpdateItemInput,
@@ -343,6 +344,138 @@ export async function listItemSales(id: number, q: ItemSalesQuery) {
         belowCost: l.lineTotal.lt(cost),
         returnedQty: ret?.qty ?? 0,
         returnedTotal: ret?.total ?? ZERO,
+      };
+    }),
+    total,
+  };
+}
+
+/**
+ * سجل مشتريات صنف: كل سطور فواتير الشراء اللي الصنف دخل فيها (الأحدث الأول) + إجماليات الفترة كلها.
+ * إجمالي السطر قبل خصم الفاتورة. المرتجع للمورد بيتنسب للفاتورة اللي اتعمل عليها (لو المرتجع مربوط بفاتورة)
+ * وبيتخصم في الصافي حسب تاريخ المرتجع.
+ */
+export async function listItemPurchases(id: number, q: ItemPurchasesQuery) {
+  const item = await prisma.item.findUnique({
+    where: { id },
+    select: { id: true, name: true, unit: true, priceBasis: true },
+  });
+  if (!item) throw new appError('Item not found', 404);
+
+  const from = q.from ? cairoStartOfDay(q.from) : undefined;
+  const toExcl = q.to ? cairoStartOfDay(addDaysYMD(q.to, 1)) : undefined;
+  const range =
+    from || toExcl
+      ? { ...(from ? { gte: from } : {}), ...(toExcl ? { lt: toExcl } : {}) }
+      : undefined;
+  const where: Prisma.PurchaseLineWhereInput = {
+    itemId: id,
+    ...(range ? { purchase: { date: range } } : {}),
+  };
+
+  const buyDate = Prisma.sql`${from ? Prisma.sql`AND p."date" >= ${from}` : Prisma.empty} ${toExcl ? Prisma.sql`AND p."date" < ${toExcl}` : Prisma.empty}`;
+  const retDate = Prisma.sql`${from ? Prisma.sql`AND r."date" >= ${from}` : Prisma.empty} ${toExcl ? Prisma.sql`AND r."date" < ${toExcl}` : Prisma.empty}`;
+
+  const [total, rows, boughtAgg, retAgg] = await Promise.all([
+    prisma.purchaseLine.count({ where }),
+    prisma.purchaseLine.findMany({
+      where,
+      orderBy: [{ purchase: { date: 'desc' } }, { id: 'desc' }],
+      skip: (q.page - 1) * q.limit,
+      take: q.limit,
+      include: {
+        purchase: {
+          select: {
+            id: true,
+            date: true,
+            supplier: { select: { id: true, name: true } },
+          },
+        },
+        batch: { select: { expiryDate: true, unitCost: true } },
+      },
+    }),
+    prisma.$queryRaw<
+      { invoices: number; qty: number; cost: string }[]
+    >`SELECT COUNT(DISTINCT pl."purchaseId")::int AS invoices,
+             COALESCE(SUM(pl."baseQty"), 0)::int AS qty,
+             COALESCE(SUM(pl."lineTotal"), 0)::text AS cost
+      FROM "PurchaseLine" pl JOIN "Purchase" p ON p."id" = pl."purchaseId"
+      WHERE pl."itemId" = ${id} ${buyDate}`,
+    prisma.$queryRaw<
+      { qty: number; value: string }[]
+    >`SELECT COALESCE(SUM(rl."baseQty"), 0)::int AS qty,
+             COALESCE(SUM(rl."lineTotal"), 0)::text AS value
+      FROM "PurchaseReturnLine" rl JOIN "PurchaseReturn" r ON r."id" = rl."returnId"
+      WHERE rl."itemId" = ${id} ${retDate}`,
+  ]);
+
+  // المرتجع لكل سطر في الصفحة: بنجمع مرتجعات (فاتورة + باتش) ونوزعها على السطور اللي ليها نفس الباتش بالترتيب
+  const returned = new Map<number, { qty: number; total: Prisma.Decimal }>();
+  const purchaseIds = [...new Set(rows.map((r) => r.purchaseId))];
+  if (purchaseIds.length > 0) {
+    const [rl, siblings] = await Promise.all([
+      prisma.purchaseReturnLine.findMany({
+        where: { itemId: id, purchaseReturn: { purchaseId: { in: purchaseIds } } },
+        select: {
+          baseQty: true,
+          lineTotal: true,
+          batchId: true,
+          purchaseReturn: { select: { purchaseId: true } },
+        },
+      }),
+      prisma.purchaseLine.findMany({
+        where: { itemId: id, purchaseId: { in: purchaseIds } },
+        orderBy: { id: 'asc' },
+        select: { id: true, purchaseId: true, batchId: true, baseQty: true },
+      }),
+    ]);
+    const pool = new Map<string, { qty: number; total: Prisma.Decimal }>();
+    for (const r of rl) {
+      const k = `${r.purchaseReturn.purchaseId}:${r.batchId}`;
+      const cur = pool.get(k) ?? { qty: 0, total: ZERO };
+      pool.set(k, { qty: cur.qty + r.baseQty, total: cur.total.add(r.lineTotal) });
+    }
+    for (const l of siblings) {
+      const k = `${l.purchaseId}:${l.batchId}`;
+      const cur = pool.get(k);
+      if (!cur || cur.qty <= 0) continue;
+      const take = Math.min(cur.qty, l.baseQty);
+      const part = cur.total.mul(take).div(cur.qty);
+      returned.set(l.id, { qty: take, total: part });
+      pool.set(k, { qty: cur.qty - take, total: cur.total.sub(part) });
+    }
+  }
+
+  const bought = boughtAgg[0];
+  const boughtCost = dec(bought.cost);
+  const ret = retAgg[0];
+  const retValue = dec(ret.value);
+
+  return {
+    item,
+    summary: {
+      invoices: bought.invoices,
+      boughtQty: bought.qty,
+      boughtCost,
+      returnedQty: ret.qty,
+      returnedValue: retValue,
+      netQty: bought.qty - ret.qty,
+      netCost: boughtCost.sub(retValue),
+    },
+    lines: rows.map((l) => {
+      const r = returned.get(l.id);
+      return {
+        id: l.id,
+        purchaseId: l.purchase.id,
+        date: l.purchase.date,
+        supplier: l.purchase.supplier,
+        baseQty: l.baseQty,
+        unitCost: l.batch.unitCost,
+        lineTotal: l.lineTotal,
+        expiryDate: l.batch.expiryDate,
+        hasExpiry: hasExpiry(l.batch.expiryDate),
+        returnedQty: r?.qty ?? 0,
+        returnedTotal: r?.total ?? ZERO,
       };
     }),
     total,
