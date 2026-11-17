@@ -76,6 +76,7 @@ const messages: Record<string, string> = {
   'This purchase has returns to the supplier: delete them first': 'الفاتورة دي عليها مرتجعات للمورد، امسح المرتجعات الأول',
   'This purchase has returns, so its supplier cannot change': 'الفاتورة عليها مرتجعات فمينفعش تغيّر المورد',
   'Part of this purchase was already sold or returned, so it cannot be deleted': 'جزء من الفاتورة دي اتباع أو اترجّع، فمينفعش تتمسح',
+  'Part of this item was written off or returned to the supplier, so its price cannot be changed': 'جزء من الصنف ده اتسوّى (تالف/تسوية) أو اترجّع للمورد، فمينفعش تغيّر سعره',
   'Part of this purchase was already returned to the supplier: keep at least the returned quantity, or delete the return first': 'جزء من الفاتورة اترجّع للمورد: سيب على الأقل الكمية المرتجعة أو امسح المرتجع الأول',
   'At least one line is required': 'لازم تضيف صنف واحد على الأقل',
   'Sale not found': 'فاتورة البيع مش موجودة',

@@ -22,6 +22,7 @@ import {
   returnCapViolations,
   sumByBatch,
 } from './purchase.helpers';
+import { dropEmptyBatches, transferSoldUnits } from './purchase.recost';
 
 async function prepareFromInput(
   db: Prisma.TransactionClient,
@@ -204,6 +205,7 @@ export async function updatePurchase(id: number, input: UpdatePurchaseInput) {
       }
 
       let subtotal = purchase.total.add(purchase.discount);
+      let emptiedBatches: number[] = [];
       if (input.lines) {
         const { prepared, subtotal: newSubtotal } = await prepareFromInput(
           tx,
@@ -242,7 +244,15 @@ export async function updatePurchase(id: number, input: UpdatePurchaseInput) {
           );
         }
 
-        for (const { batchId, delta } of batchDeltas(oldQty, newQty)) {
+        const { residual, emptied } = await transferSoldUnits(
+          tx,
+          purchase,
+          returned,
+          batchDeltas(oldQty, newQty),
+        );
+        emptiedBatches = emptied;
+
+        for (const { batchId, delta } of residual) {
           if (delta > 0) {
             await tx.batch.update({
               where: { id: batchId },
@@ -281,6 +291,7 @@ export async function updatePurchase(id: number, input: UpdatePurchaseInput) {
             batchId: l.batchId,
           })),
         });
+        await dropEmptyBatches(tx, emptiedBatches);
         subtotal = newSubtotal;
       }
 
@@ -321,7 +332,7 @@ export async function listPurchases(q: ListPurchasesQuery) {
   if (q.from || q.to) {
     where.date = {
       ...(q.from ? { gte: cairoStartOfDay(q.from) } : {}),
-      ...(q.to ? { lt: cairoStartOfDay(addDaysYMD(q.to, 1)) } : {}), // the whole "to" day
+      ...(q.to ? { lt: cairoStartOfDay(addDaysYMD(q.to, 1)) } : {}),
     };
   }
 
